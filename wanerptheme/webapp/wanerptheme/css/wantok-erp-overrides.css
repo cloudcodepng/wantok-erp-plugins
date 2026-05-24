@@ -1,0 +1,379 @@
+/* Wantok ERP overrides over Helveticus Sapphire */
+:root {
+    --wantok-black: #050505;
+    --wantok-navy: #003642;
+    --wantok-sapphire: #2f97e8;
+    --wantok-sapphire-dark: #005f7f;
+    --wantok-red: #d71920;
+    --wantok-red-dark: #a91016;
+    --wantok-gold: #f4b400;
+    --wantok-white: #ffffff;
+}
+
+/* ---------------------------------------------------------
+   IMPORTANT:
+   Do not style generic .selected.
+   OFBiz uses .selected in many places, including theme rows,
+   tabs, tables and menus.
+--------------------------------------------------------- */
+
+/* Main top app bar */
+#masthead,
+#header,
+#main-navigation,
+#main-nav-bar-left,
+.top-app-bar,
+.appbar,
+.navbar-main,
+.main-navigation {
+    /*background-color: var(--wantok-sapphire) !important;*/
+}
+
+#main-navigation-bar {
+    background-color: var(--wantok-red-dark);
+}
+
+#app-bar-list .app-btn.selected {
+    margin-bottom: -5px;
+}
+
+
+/* Top-left header logo */
+#masthead #company-logo,
+#header #company-logo,
+#main-navigation #company-logo,
+#main-nav-bar-left #company-logo,
+header #company-logo {
+    display: block !important;
+    width: 120px !important;plugins/wanerptheme/template/includes/Avatar.ftl
+    height: 50px !important;
+    min-width: 120px !important;
+    max-width: 120px !important;
+    background-image: url("/wanerptheme/images/wantok-erp-logo-white.png") !important;
+    background-repeat: no-repeat !important;
+    background-position: center center !important;
+    background-size: contain !important;
+    margin: 0.7rem 3rem 0.7rem 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+/* Hide any old nested logo text/images inside the logo holder */
+#masthead #company-logo *,
+#header #company-logo *,
+#main-navigation #company-logo *,
+#main-nav-bar-left #company-logo * {
+    display: none !important;
+}
+
+/* Login page logo: only login area, not top bar */
+#loginBar #company-logo,
+.login-screenlet #company-logo,
+#login-screenlet #company-logo,
+#loginform #company-logo,
+form[name="loginform"] #company-logo {
+    display: block !important;
+    width: 280px !important;
+    height: 145px !important;
+    background-image: url("/wanerptheme/images/wantok-erp-logo-black.png") !important;
+    background-repeat: no-repeat !important;
+    background-position: center center !important;
+    background-size: contain !important;
+    margin: 0 auto 20px auto !important;
+    padding: 0 !important;
+}
+
+/* Buttons only */
+button:not(.ui-datepicker-trigger, .ui-dialog-titlebar-close),
+.button,
+.btn,
+input[type="submit"],
+input[type="button"],
+input[type="reset"] {
+    background-color: var(--wantok-gold) !important;
+    border-color: var(--wantok-red-dark) !important;
+    color: var(--wantok-white) !important;
+}
+
+button:hover:not(.ui-datepicker-trigger, .ui-dialog-titlebar-close),
+.button:hover,
+.btn:hover,
+input[type="submit"]:hover,
+input[type="button"]:hover,
+input[type="reset"]:hover,
+a.buttontext:hover, #app-navigation a:hover {
+    background-color: var(--wantok-red-dark) !important;
+    border-color: #7d0c10 !important;
+    color: var(--wantok-white) !important;
+}
+
+div.button-bar .selected a,
+div.tab-bar .selected a, #app-navigation li.selected a  {
+    background-color: var(--wantok-gold) !important;
+    border-color: #7d0c10 !important;
+    color: var(--wantok-white) !important;
+}
+
+#app-navigation li.selected a:hover, div.button-bar .selected a:hover, div.tab-bar .selected a:hover, .button-bar a:hover, .basic-nav a:hover, #screenlet_1 .screenlet-title-bar a:hover  {
+    background-color: var(--wantok-red-dark) !important;
+    border-color: #7d0c10 !important;
+    color: var(--wantok-white) !important;
+}
+
+
+#screenlet_1 .screenlet-title-bar a {
+    background: #e1f0ff;
+    color: #3699ff !important;
+    padding: 0.5rem 0.8rem;
+    column-gap: 1rem;
+    border-radius: 0.5rem;
+    display: inline-block;
+    font-weight: 600;
+    margin: 0.3rem 0.5rem 0.3rem 0.3rem;
+    transition: all 0.2s;
+}
+
+
+
+
+
+
+
+/* Footer */
+#footer,
+footer {
+    background-color: var(--wantok-black) !important;
+    color: var(--wantok-gold) !important;
+}
+
+#footer a,
+footer a {
+    color: var(--wantok-gold) !important;
+}
+
+/* Hide visual theme selector links from user menu */
+a[href*="ListVisualThemes"],
+a[href*="selectTheme"] {
+    display: none !important;
+}
+
+button.ui-datepicker-trigger {
+    background-color: none;
+    border-color: none;
+     color: none;
+}
+
+#messages .errorPosMessage {
+    position: relative !important;
+    padding-top: 15px !important;
+}
+
+/* =========================================================
+   Wantok ERP Login Page - Full Background + Overlay
+   ========================================================= */
+
+/* Login page base */
+body:has(.wanerp-login-page) {
+    margin: 0 !important;
+    min-height: 100vh !important;
+    background: #000 !important;
+    overflow-x: hidden;
+}
+
+/* Remove normal OFBiz page spacing on login */
+body:has(.wanerp-login-page) .page-container,
+body:has(.wanerp-login-page) .contentarea,
+body:has(.wanerp-login-page) #column-container,
+body:has(.wanerp-login-page) #content-main-section {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+}
+
+/* Important: remove the artificial footer spacer on login page */
+body:has(.wanerp-login-page) #footer-offset {
+    display: none !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Make the login area fill the screen above the footer */
+body:has(.wanerp-login-page) #content-main-section {
+    min-height: calc(100vh - 34px) !important;
+}
+
+/* Full login background */
+.wanerp-login-page {
+    position: relative;
+    width: 100%;
+    min-height: calc(100vh - 34px);
+    background-image: url('/wanerptheme/images/login-bg1.png');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    flex-direction: column;
+
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+    box-sizing: border-box;
+
+    overflow: hidden;
+}
+
+/* Main dark overlay over the background image */
+.wanerp-login-page::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+
+    background:
+        linear-gradient(
+            90deg,
+            rgba(0, 0, 0, 0.72) 0%,
+            rgba(0, 0, 0, 0.48) 38%,
+            rgba(0, 0, 0, 0.55) 100%
+        );
+
+    pointer-events: none;
+}
+
+/* Gold/black transparent overlay like your attached sample */
+.wanerp-login-page::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+
+    background:
+        radial-gradient(
+            circle at 45% 18%,
+            rgba(242, 183, 5, 0.30) 0%,
+            rgba(242, 183, 5, 0.16) 22%,
+            rgba(0, 0, 0, 0.10) 45%,
+            rgba(0, 0, 0, 0.55) 100%
+        ),
+        linear-gradient(
+            135deg,
+            rgba(242, 183, 5, 0.20) 0%,
+            rgba(0, 0, 0, 0.20) 42%,
+            rgba(0, 0, 0, 0.68) 100%
+        );
+
+    pointer-events: none;
+}
+
+/* If you still have this div in Login.ftl, keep it harmless */
+.wanerp-login-overlay {
+    display: none !important;
+}
+
+/* Login content must sit above the overlays */
+.wanerp-login-content {
+    position: relative;
+    z-index: 3;
+    width: 100%;
+    max-width: 560px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Logo */
+.wanerp-login-content #loginBar {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 1rem;
+    background: transparent !important;
+}
+
+.wanerp-login-content #company-logo {
+    margin: 0 auto;
+    background-repeat: no-repeat !important;
+    background-position: center center !important;
+    background-size: contain !important;
+}
+
+/* Login card */
+.wanerp-login-content .login-screenlet {
+    width: 100%;
+    max-width: 520px;
+    background: rgba(255, 255, 255, 0.96) !important;
+    border-radius: 18px;
+    border: none !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.40);
+    padding: 2rem 2.5rem;
+    box-sizing: border-box;
+}
+
+/* Login title */
+.wanerp-login-content .login-screenlet h3 {
+    text-align: center;
+    font-size: 1.35rem;
+    margin: 0 0 1.8rem 0;
+    color: #111827;
+}
+
+/* Form labels */
+.wanerp-login-content .login-screenlet label {
+    display: block;
+    margin-bottom: 1.2rem;
+    color: #111827;
+    font-weight: 600;
+}
+
+/* Inputs */
+.wanerp-login-content .login-screenlet input[type="text"],
+.wanerp-login-content .login-screenlet input[type="password"] {
+    width: 100%;
+    height: 44px;
+    margin-top: 0.4rem;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    background: #f3f6fb;
+    padding: 0 0.8rem;
+    box-sizing: border-box;
+}
+
+/* Forgot password link */
+.wanerp-login-content .login-screenlet a {
+    display: block;
+    text-align: right;
+    font-size: 0.8rem;
+    margin-top: 0.4rem;
+}
+
+/* Login button */
+.wanerp-login-content .login-screenlet input[type="submit"] {
+    width: 100%;
+    height: 46px;
+    margin-top: 1.2rem;
+    border-radius: 8px;
+    border: none !important;
+    background: #f2b705 !important;
+    color: #ffffff !important;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.wanerp-login-content .login-screenlet input[type="submit"]:hover {
+    background: #c99700 !important;
+}
+
+/* Footer sits cleanly below the full background */
+body:has(.wanerp-login-page) #footer {
+    position: relative;
+    z-index: 5;
+    margin: 0 !important;
+}
+
+

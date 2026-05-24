@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-engine-xml>
+    <VisualTheme
+        visualThemeId="WANTOK_ERP_THEME"
+        visualThemeSetId="BACKOFFICE"
+        description="Wantok ERP Theme"/>
+
+    <VisualThemeResource visualThemeId="WANTOK_ERP_THEME" resourceTypeEnumId="VT_HDR_IMAGE_URL" resourceValue="/wanerptheme/images/wantok-erp-logo-white.png" sequenceId="01"/>
+    <VisualThemeResource visualThemeId="WANTOK_ERP_THEME" resourceTypeEnumId="VT_SHORTCUT_ICON" resourceValue="/wanerptheme/images/favicon" sequenceId="01"/>
+
+    <VisualThemeResource visualThemeId="WANTOK_ERP_THEME" resourceTypeEnumId="VT_HDR_TMPLT_LOC" resourceValue="component://wanerptheme/template/includes/Header.ftl" sequenceId="01"/>
+    <VisualThemeResource visualThemeId="WANTOK_ERP_THEME" resourceTypeEnumId="VT_FTR_TMPLT_LOC" resourceValue="component://wanerptheme/template/includes/Footer.ftl" sequenceId="01"/>
+    <VisualThemeResource visualThemeId="WANTOK_ERP_THEME" resourceTypeEnumId="VT_NAV_TMPLT_LOC" resourceValue="component://wanerptheme/template/includes/TopAppBar.ftl" sequenceId="01"/>
+    <VisualThemeResource visualThemeId="WANTOK_ERP_THEME" resourceTypeEnumId="VT_LOGIN_TMPLT_LOC" resourceValue="component://wanerptheme/template/Login.ftl" sequenceId="01"/>
+    <VisualThemeResource visualThemeId="WANTOK_ERP_THEME" resourceTypeEnumId="VT_CHPWD_TMPLT_LOC" resourceValue="component://wanerptheme/template/ChangePassword.ftl" sequenceId="01"/>
+    <VisualThemeResource visualThemeId="WANTOK_ERP_THEME" resourceTypeEnumId="VT_FGPWD_TMPLT_LOC" resourceValue="component://wanerptheme/template/ForgotPassword.ftl" sequenceId="01"/>
+
+    <VisualThemeResource visualThemeId="WANTOK_ERP_THEME" resourceTypeEnumId="VT_HDR_JAVASCRIPT" resourceValue="/wanerptheme/js/less.min.js" sequenceId="01"/>
+    <VisualThemeResource visualThemeId="WANTOK_ERP_THEME" resourceTypeEnumId="VT_FTR_JAVASCRIPT" resourceValue="/wanerptheme/js/wanerptheme.js" sequenceId="01"/>
+
+    <VisualThemeResource visualThemeId="WANTOK_ERP_THEME" resourceTypeEnumId="VT_STYLESHEET" resourceValue="/wanerptheme/css/style.css" sequenceId="01"/>
+    <VisualThemeResource visualThemeId="WANTOK_ERP_THEME" resourceTypeEnumId="VT_STYLESHEET" resourceValue="/wanerptheme/css/flag-icon.min.css" sequenceId="02"/>
+    <VisualThemeResource visualThemeId="WANTOK_ERP_THEME" resourceTypeEnumId="VT_STYLESHEET" resourceValue="/wanerptheme/css/javascript.css" sequenceId="03"/>
+    <VisualThemeResource visualThemeId="WANTOK_ERP_THEME" resourceTypeEnumId="VT_STYLESHEET" resourceValue="/wanerptheme/css/wantok-erp-overrides.css" sequenceId="99"/>
+    
+    <!-- DEFAULT fallback theme now renders Wantok ERP resources -->
+    <VisualTheme visualThemeId="DEFAULT"
+                visualThemeSetId="BACKOFFICE"
+                description="Wantok ERP Default Theme"/>
+
+    <VisualThemeResource visualThemeId="DEFAULT" resourceTypeEnumId="VT_SHORTCUT_ICON"
+                        resourceValue="/wanerptheme/images/favicon" sequenceId="01"/>
+    <VisualThemeResource visualThemeId="DEFAULT" resourceTypeEnumId="VT_HDR_IMAGE_URL"
+                        resourceValue="/wanerptheme/images/wantok-erp-logo-white.png" sequenceId="01"/>
+    <VisualThemeResource visualThemeId="DEFAULT" resourceTypeEnumId="VT_HDR_TMPLT_LOC"
+                        resourceValue="component://wanerptheme/template/includes/Header.ftl" sequenceId="01"/>
+    <VisualThemeResource visualThemeId="DEFAULT" resourceTypeEnumId="VT_FTR_TMPLT_LOC"
+                        resourceValue="component://wanerptheme/template/includes/Footer.ftl" sequenceId="01"/>
+    <VisualThemeResource visualThemeId="DEFAULT" resourceTypeEnumId="VT_NAV_TMPLT_LOC"
+                        resourceValue="component://wanerptheme/template/includes/TopAppBar.ftl" sequenceId="01"/>
+    <VisualThemeResource visualThemeId="DEFAULT" resourceTypeEnumId="VT_LOGIN_TMPLT_LOC"
+                        resourceValue="component://wanerptheme/template/Login.ftl" sequenceId="01"/>
+    <VisualThemeResource visualThemeId="DEFAULT" resourceTypeEnumId="VT_CHPWD_TMPLT_LOC"
+                        resourceValue="component://wanerptheme/template/ChangePassword.ftl" sequenceId="01"/>
+    <VisualThemeResource visualThemeId="DEFAULT" resourceTypeEnumId="VT_FGPWD_TMPLT_LOC"
+                        resourceValue="component://wanerptheme/template/ForgotPassword.ftl" sequenceId="01"/>
+    <VisualThemeResource visualThemeId="DEFAULT" resourceTypeEnumId="VT_HDR_JAVASCRIPT"
+                        resourceValue="/wanerptheme/js/less.min.js" sequenceId="01"/>
+    <VisualThemeResource visualThemeId="DEFAULT" resourceTypeEnumId="VT_FTR_JAVASCRIPT"
+                        resourceValue="/wanerptheme/js/wanerptheme.js" sequenceId="01"/>
+    <VisualThemeResource visualThemeId="DEFAULT" resourceTypeEnumId="VT_STYLESHEET"
+                        resourceValue="/wanerptheme/css/style.css" sequenceId="01"/>
+    <VisualThemeResource visualThemeId="DEFAULT" resourceTypeEnumId="VT_STYLESHEET"
+                        resourceValue="/wanerptheme/css/flag-icon.min.css" sequenceId="02"/>
+    <VisualThemeResource visualThemeId="DEFAULT" resourceTypeEnumId="VT_STYLESHEET"
+                        resourceValue="/wanerptheme/css/javascript.css" sequenceId="03"/>
+    <VisualThemeResource visualThemeId="DEFAULT" resourceTypeEnumId="VT_STYLESHEET"
+                        resourceValue="/wanerptheme/css/wantok-erp-overrides.css" sequenceId="99"/>
+
+    <!-- Default and admin theme preferences -->
+    <UserPreference userLoginId="_NA_" userPrefTypeId="VISUAL_THEME"
+                    userPrefGroupTypeId="GLOBAL_PREFERENCES" userPrefValue="WANTOK_ERP_THEME"/>
+    <UserPreference userLoginId="admin" userPrefTypeId="VISUAL_THEME"
+                    userPrefGroupTypeId="GLOBAL_PREFERENCES" userPrefValue="WANTOK_ERP_THEME"/>
+    
+    
+    
+</entity-engine-xml>

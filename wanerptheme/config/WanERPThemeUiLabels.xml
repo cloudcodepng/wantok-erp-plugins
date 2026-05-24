@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Keep only English for now because of OFBIZ-13095 -->
+<resource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://ofbiz.apache.org/dtds/ofbiz-properties.xsd">
+    <property key="WanERPThemeApplication">
+        <value xml:lang="en">Wantok ERP</value>
+    </property>
+    <property key="WanERPThemeCompanyName">
+        <value xml:lang="en">Cloudcode PNG Limited</value>
+    </property>
+    <property key="WanERPThemeCompanySubtitle">
+        <value xml:lang="en">Wantok ERP by Cloudcode PNG Limited</value>
+    </property>
+    <property key="WanERPThemeViewPermissionError">
+        <value xml:lang="en">You are not allowed to view this page.</value>
+    </property>
+</resource>
