@@ -31,10 +31,10 @@ parent form.
 * The BIRT Report Designer: <<#_using_the_birt_report_designer,Using the Birt Report Designer>>
 
 ==== How to do
-. Get to Birt component in OFBiz image:Birt-Menus.png[Birt menus]
+. Get to Birt component in OFBiz image:../images/birt/Birt-Menus.png[Birt menus]
 . Click on the "Flexible Report" menu (varies depending on themes)
 . Click on the "Generate report" button, you get to this screen:
-. Fill the form: image:Example-Report.png[Example Report]
+. Fill the form: image:../images/birt/Example-Report.png[Example Report]
 ** The list "Choose report topic" will let you choose among predefined report masters your topic of interest.
 ** The report name is a simple short name from which the file name will be generated.
 ** The description is a short description which will allow you to recognise the report and its topic.
@@ -42,7 +42,7 @@ parent form.
 
 Once the form is validated, OFBiz will show you the "Edit Report" screen.
 
-image::Edit-Report-screen.png[Edit Report screen]
+image::../images/birt/Edit-Report-screen.png[Edit Report screen]
 
 ==== Report information
 
