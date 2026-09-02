@@ -21,20 +21,6 @@ under the License.
 <#assign useMultitenant = Static["org.apache.ofbiz.base.util.UtilProperties"].getPropertyValue("general.properties", "multitenant")>
 
 <#assign username = requestParameters.USERNAME?default((sessionAttributes.autoUserLogin.userLoginId)?default(""))>
-<#assign loginTenantId = "">
-<#if requestAttributes.userTenantId?? && requestAttributes.userTenantId?has_content>
-  <#assign loginTenantId = requestAttributes.userTenantId>
-<#elseif parameters.userTenantId?? && parameters.userTenantId?has_content>
-  <#assign loginTenantId = parameters.userTenantId>
-<#elseif requestParameters.userTenantId?? && requestParameters.userTenantId?has_content>
-  <#assign loginTenantId = requestParameters.userTenantId>
-<#elseif parameters.tenantId?? && parameters.tenantId?has_content>
-  <#assign loginTenantId = parameters.tenantId>
-<#elseif requestParameters.tenantId?? && requestParameters.tenantId?has_content>
-  <#assign loginTenantId = requestParameters.tenantId>
-</#if>
-
-
 <#if username != "">
   <#assign focusName = false>
 <#else>
@@ -64,7 +50,7 @@ under the License.
           <input type="password" name="PASSWORD" autocomplete="off" value="" tabindex="0"/>
             <a href="<@ofbizUrl>forgotPassword</@ofbizUrl>">${uiLabelMap.CommonForgotYourPassword}</a>
         </label>
-        <!--
+
         <#if ("Y" == useMultitenant) >
           <#if !requestAttributes.userTenantId??>
           <label>
@@ -75,13 +61,7 @@ under the License.
           <input type="hidden" name="userTenantId" value="${requestAttributes.userTenantId!}"/>
           </#if>
         </#if>
-        -->
-        <#if ("Y" == useMultitenant) >
-          <input type="hidden" name="userTenantId" id="userTenantId" value="${loginTenantId!}"/>
-          <input type="hidden" name="tenantId" id="tenantId" value="${loginTenantId!}"/>
-        </#if>
 
-        <input type="hidden" name="userTenantId" value="${loginTenantId!}"/>
           <input type="submit" value="${uiLabelMap.CommonLogin}"  tabindex="0"/>
           <input type="hidden" name="JavaScriptEnabled" value="N"/>
           
@@ -90,7 +70,7 @@ under the License.
     </div>
   </div>
 </div>
-<!--
+
 <script type="application/javascript">
   document.loginform.JavaScriptEnabled.value = "Y";
   <#if focusName>
@@ -98,59 +78,4 @@ under the License.
   <#else>
     document.loginform.PASSWORD.focus();
   </#if>
-</script>
--->
-<script type="application/javascript">
-  document.addEventListener("DOMContentLoaded", function () {
-    document.loginform.JavaScriptEnabled.value = "Y";
-
-    const params = new URLSearchParams(window.location.search);
-    const urlTenantId = params.get("tenantId") || params.get("userTenantId");
-
-    const userTenantInput = document.querySelector('input[name="userTenantId"]');
-    const tenantInput = document.querySelector('input[name="tenantId"]');
-
-    let currentTenantId = userTenantInput ? userTenantInput.value : "";
-
-    /*
-     * Production/FQDN mode:
-     * currentTenantId should already be populated server-side from requestAttributes.userTenantId.
-     *
-     * Local/dev mode:
-     * fallback to ?tenantId=CLOUDCODE from URL.
-     */
-    if (!currentTenantId && urlTenantId) {
-      currentTenantId = urlTenantId;
-    }
-
-    if (currentTenantId) {
-      if (userTenantInput) {
-        userTenantInput.value = currentTenantId;
-      }
-
-      if (tenantInput) {
-        tenantInput.value = currentTenantId;
-      }
-    }
-
-    /*
-     * For local/dev, block accidental tenantless login.
-     * Later in production FQDN mode this should still pass because userTenantId
-     * should be filled from requestAttributes.userTenantId.
-     */
-    document.loginform.addEventListener("submit", function (event) {
-      const tenantValue = userTenantInput ? userTenantInput.value : "";
-
-      if (!tenantValue) {
-        event.preventDefault();
-        alert("Tenant context is missing. Please open the tenant-specific URL.");
-      }
-    });
-
-    <#if focusName>
-      document.loginform.USERNAME.focus();
-    <#else>
-      document.loginform.PASSWORD.focus();
-    </#if>
-  });
 </script>

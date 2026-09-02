@@ -377,3 +377,30 @@ body:has(.wanerp-login-page) #footer {
 }
 
 
+/* Wantok ERP footer tenant badge */
+#footer-info {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 18px;
+}
+
+.wanerp-footer-tenant-badge {
+    margin-left: auto;
+    margin-right: 14px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(246, 196, 0, 0.16);
+    border: 1px solid rgba(246, 196, 0, 0.45);
+    color: #f6c400;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.3;
+    white-space: nowrap;
+}
+
+.wanerp-footer-tenant-badge strong {
+    color: #ffffff;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}

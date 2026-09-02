@@ -17,54 +17,6 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-<#-- Wantok ERP tenant context helper for logout.
-     Local dev keeps tenantId in the URL.
-     Production FQDN later should resolve tenant from requestAttributes.userTenantId. -->
-     <#assign wanerpTenantId = "">
-
-     <#if requestAttributes.userTenantId?? && requestAttributes.userTenantId?has_content>
-         <#assign wanerpTenantId = requestAttributes.userTenantId>
-     <#elseif parameters.userTenantId?? && parameters.userTenantId?has_content>
-         <#assign wanerpTenantId = parameters.userTenantId>
-     <#elseif requestParameters.userTenantId?? && requestParameters.userTenantId?has_content>
-         <#assign wanerpTenantId = requestParameters.userTenantId>
-     <#elseif parameters.tenantId?? && parameters.tenantId?has_content>
-         <#assign wanerpTenantId = parameters.tenantId>
-     <#elseif requestParameters.tenantId?? && requestParameters.tenantId?has_content>
-         <#assign wanerpTenantId = requestParameters.tenantId>
-     <#elseif delegator?? && delegator.delegatorName??>
-         <#assign wanerpDelegatorName = delegator.delegatorName?string>
-         <#assign wanerpDelegatorName = wanerpDelegatorName?replace("&amp;#x23;", "#")?replace("&#x23;", "#")?replace("&#35;", "#")>
-         <#if wanerpDelegatorName?contains("#")>
-             <#assign wanerpTenantId = wanerpDelegatorName?keep_after("#")>
-         </#if>
-     </#if>
-     
-    <#-- Normalize possible escaped/hash forms before extracting tenant code. -->
-    <#assign wanerpTenantId = wanerpTenantId?replace("&amp;#x23;", "#")>
-    <#assign wanerpTenantId = wanerpTenantId?replace("&#x23;", "#")>
-    <#assign wanerpTenantId = wanerpTenantId?replace("&#35;", "#")>
-
-    <#-- If value is default#CLOUDCODE, keep CLOUDCODE. -->
-    <#if wanerpTenantId?contains("#")>
-        <#assign wanerpTenantId = wanerpTenantId?keep_after_last("#")>
-    </#if>
-
-    <#-- If previous escaping produced x23;CLOUDCODE, keep CLOUDCODE. -->
-    <#if wanerpTenantId?contains("x23;")>
-        <#assign wanerpTenantId = wanerpTenantId?keep_after_last("x23;")>
-    </#if>
-
-    <#assign wanerpTenantId = wanerpTenantId?trim>
-     
-     <#assign wanerpServerName = request.getServerName()?lower_case>
-     <#assign wanerpUseTenantQueryParam = wanerpServerName == "localhost" || wanerpServerName == "127.0.0.1">
-     <#assign wanerpLogoutTenantParams = "">
-     
-     <#if wanerpUseTenantQueryParam && wanerpTenantId?has_content>
-         <#assign wanerpLogoutTenantParams = "?tenantId=" + wanerpTenantId + "&userTenantId=" + wanerpTenantId>
-     </#if>
-
 <div id="user-avatar" onclick="showHideUserPref()">
 <#if avatarDetail??>
     <img src="<@ofbizUrl>stream?contentId=${avatarDetail.contentId}</@ofbizUrl>" alt="user">
@@ -95,6 +47,6 @@ under the License.
         </a>
         <a class="dark-color" title="${uiLabelMap.CommonHelp}" href="${userDocUri!Static["org.apache.ofbiz.entity.util.EntityUtilProperties"].getPropertyValue("general", "userDocUri", delegator)}<#if helpAnchor??>#${helpAnchor}</#if>" target="help">${uiLabelMap.CommonHelp}</a>
         <!--<a id="visual-theme" class="user-pref-btn" href="<@ofbizUrl>ListVisualThemes</@ofbizUrl>">${uiLabelMap.CommonVisualThemes}</a>-->
-        <a id="logout" class="user-pref-btn" href="<@ofbizUrl>logout</@ofbizUrl>${wanerpLogoutTenantParams!}">${uiLabelMap.CommonLogout}</a>
+        <a id="logout" class="user-pref-btn" href="<@ofbizUrl>logout</@ofbizUrl>">${uiLabelMap.CommonLogout}</a>
     </div>
 </div>

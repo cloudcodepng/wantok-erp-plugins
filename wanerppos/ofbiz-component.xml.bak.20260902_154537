@@ -27,12 +27,7 @@ under the License.
     <!-- place the config directory on the classpath to access configuration files -->
     <classpath type="dir" location="config"/>
     <!-- entity resources: model(s), eca(s), group, and data definitions -->
-    <!--
-    Disabled because wanerppos reuses WebPOS entity definitions.
-    Loading this file duplicates PosTerminal, PosTerminalLog,
-    PosTerminalState, and PosTerminalInternTx.
     <entity-resource type="model" reader-name="main" loader="main" location="entitydef/entitymodel.xml"/>
-    -->
     <!-- <entity-resource type="eca" reader-name="main" loader="main" location="entitydef/eecas.xml"/> -->
     <entity-resource type="data" reader-name="seed" loader="main" location="data/WanERPPOSTypeData.xml"/>
     <entity-resource type="data" reader-name="seed" loader="main" location="data/WanERPPOSSecurityPermissionSeedData.xml"/>
