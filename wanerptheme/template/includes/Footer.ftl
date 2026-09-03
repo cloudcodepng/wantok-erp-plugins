@@ -18,7 +18,7 @@ under the License.
 -->
 
 <#-- Wantok ERP current tenant detection -->
-Works for local query-param mode and future FQDN/domain tenant mode. -->
+<#--Works for local query-param mode and future FQDN/domain tenant mode. -->
 <#assign wanerpTenantId = "">
 
 <#if requestAttributes.userTenantId?? && requestAttributes.userTenantId?has_content>

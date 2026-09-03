@@ -33,25 +33,28 @@
         <response name="error" type="view" value="error"/>
     </request-map>
 
-    <request-map uri="oidcLogout">
-        <security https="false" auth="false"/>
-        <event type="java"
-               path="com.cloudcode.wantok.keycloak.WanKeycloakEvents"
-               invoke="oidcLogout"/>
-        <response name="success" type="none"/>
-    </request-map>
+<request-map uri="oidcLogout">
+    <security https="false" auth="false"/>
+    <event type="java"
+           path="com.cloudcode.wantok.keycloak.WanKeycloakEvents"
+           invoke="oidcLogout"/>
+    <response name="success" type="none"/>
+    <response name="error" type="view" value="error"/>
+</request-map>
 
-    <request-map uri="loggedOut">
-        <security https="false" auth="false"/>
-        <response name="success" type="view" value="loggedOut"/>
-    </request-map>
+<request-map uri="loggedOut">
+    <security https="false" auth="false"/>
+    <response name="success" type="view" value="loggedOut"/>
+</request-map>
 
-    <view-map name="error"
-              type="screen"
-              page="component://wankeycloak/widget/WanKeycloakScreens.xml#Error"/>
+<view-map name="error"
+          type="screen"
+          auth="false"
+          page="component://wankeycloak/widget/WanKeycloakScreens.xml#Error"/>
 
-    <view-map name="loggedOut"
-              type="screen"
-              page="component://wankeycloak/widget/WanKeycloakScreens.xml#LoggedOut"/>
+<view-map name="loggedOut"
+          type="screen"
+          auth="false"
+          page="component://wankeycloak/widget/WanKeycloakScreens.xml#LoggedOut"/>
 
 </site-conf>

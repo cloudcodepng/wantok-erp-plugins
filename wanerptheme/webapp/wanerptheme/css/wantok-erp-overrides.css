@@ -135,7 +135,10 @@ div.tab-bar .selected a, #app-navigation li.selected a  {
 
 
 
-
+.screenlet-body .button-bar form {
+    margin: 3px 0px 3px 0px !important;
+  
+  }
 
 
 
@@ -460,3 +463,5 @@ span.wanerp-footer-tenant-badge {
 .login-screenlet .screenlet-body a.wanerp-sso-button:visited {
     color: #ffffff !important;
 }
+
+
