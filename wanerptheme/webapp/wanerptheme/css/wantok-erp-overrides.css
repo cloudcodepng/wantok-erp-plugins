@@ -399,8 +399,64 @@ body:has(.wanerp-login-page) #footer {
     white-space: nowrap;
 }
 
+span.wanerp-footer-tenant-badge {
+    padding: 3px 10px 3px 10px !important;
+}
+
 .wanerp-footer-tenant-badge strong {
     color: #ffffff;
     font-weight: 700;
     letter-spacing: 0.04em;
+}
+
+/* =========================================================
+   Wantok ERP - Keycloak SSO Login Button
+   ========================================================= */
+
+.login-screenlet .screenlet-body a.wanerp-sso-button {
+    display: block !important;
+    float: none !important;
+
+    width: 100% !important;
+    box-sizing: border-box !important;
+
+    margin: 12px 0 0 0 !important;
+    padding: 13px 16px !important;
+
+    background: #fdbb00 !important;
+    border: none !important;
+    border-radius: 8px !important;
+
+    color: #ffffff !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    line-height: 1.4 !important;
+
+    text-align: center !important;
+    text-decoration: none !important;
+
+    cursor: pointer !important;
+
+    transition:
+        filter 0.2s ease,
+        transform 0.1s ease;
+}
+
+.login-screenlet .screenlet-body a.wanerp-sso-button:hover {
+    filter: brightness(0.94);
+    color: #ffffff !important;
+    text-decoration: none !important;
+}
+
+.login-screenlet .screenlet-body a.wanerp-sso-button:focus {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+}
+
+.login-screenlet .screenlet-body a.wanerp-sso-button:active {
+    transform: translateY(1px);
+}
+
+.login-screenlet .screenlet-body a.wanerp-sso-button:visited {
+    color: #ffffff !important;
 }

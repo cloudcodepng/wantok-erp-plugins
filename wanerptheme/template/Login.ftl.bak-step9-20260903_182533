@@ -86,22 +86,6 @@ under the License.
           <input type="hidden" name="JavaScriptEnabled" value="N"/>
           
         </form>
-
-
-        <#-- Wantok ERP Keycloak SSO login -->
-      <#assign wanerpKcLoginUrl = "/wankeycloak/control/oidcLogin">
-
-      <#if loginTenantId?has_content>
-        <#assign wanerpKcLoginUrl = wanerpKcLoginUrl
-        + "?tenantId=" + loginTenantId?url('UTF-8')
-        + "&returnTo=/partymgr/control/main">
-      </#if>
-
-      <a class="wanerp-sso-button"
-        href="${wanerpKcLoginUrl}">
-        SSO Login
-      </a>
-
       </div>
     </div>
   </div>

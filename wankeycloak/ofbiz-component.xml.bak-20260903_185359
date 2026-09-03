@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ofbiz-component name="wankeycloak"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://ofbiz.apache.org/dtds/ofbiz-component.xsd">
+
+    <resource-loader name="main" type="component"/>
+
+    <entity-resource type="model" reader-name="main" loader="main" location="entitydef/entitymodel.xml"/>
+    <entity-resource type="data" reader-name="seed" loader="main" location="data/WanKeycloakSeedData.xml"/>
+    <service-resource type="model" loader="main" location="servicedef/services.xml"/>
+
+    <classpath type="dir" location="config"/>
+
+    <webapp name="wankeycloak"
+            title="Wantok Keycloak SSO"
+            server="default-server"
+            location="webapp/wankeycloak"
+            mount-point="/wankeycloak"
+            base-permission="OFBTOOLS"
+            app-bar-display="false"/>
+</ofbiz-component>

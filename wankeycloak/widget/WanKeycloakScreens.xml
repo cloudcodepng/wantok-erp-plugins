@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<screens xmlns="http://ofbiz.apache.org/Widget-Screen"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://ofbiz.apache.org/Widget-Screen https://ofbiz.apache.org/dtds/widget-screen.xsd">
+
+    <screen name="Error">
+        <section>
+            <widgets>
+                <label text="Keycloak login failed. Check logs."/>
+            </widgets>
+        </section>
+    </screen>
+
+    <screen name="LoggedOut">
+        <section>
+            <widgets>
+                <label text="You have logged out of Wantok ERP SSO."/>
+            </widgets>
+        </section>
+    </screen>
+
+</screens>

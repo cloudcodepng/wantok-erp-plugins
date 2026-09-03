@@ -1,0 +1,285 @@
+package com.cloudcode.wantok.keycloak;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import org.apache.ofbiz.base.util.UtilProperties;
+import org.apache.ofbiz.entity.Delegator;
+import org.apache.ofbiz.entity.DelegatorFactory;
+import org.apache.ofbiz.entity.GenericValue;
+
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * Wantok ERP / Keycloak 26 OIDC browser-login events.
+ *
+ * Important multi-tenant rule:
+ * - Do not create or sync users with the base "default" delegator.
+ * - After resolving tenantId, switch to the tenant delegator, e.g. default#CLOUDCODE.
+ */
+public class WanKeycloakEvents {
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final OidcTokenService TOKENS = new OidcTokenService();
+
+    public static String oidcLogin(HttpServletRequest request, HttpServletResponse response) {
+        try {
+            Delegator currentDelegator = (Delegator) request.getAttribute("delegator");
+            String tenantId = resolveTenantId(request, currentDelegator);
+            if (tenantId == null || tenantId.isBlank()) {
+                throw new IllegalStateException("Tenant ID is required for Keycloak login");
+            }
+
+            Delegator tenantDelegator = tenantDelegator(tenantId);
+            OidcTenantConfig cfg = WanKeycloakConfig.forTenant(tenantDelegator, tenantId);
+            String returnTo = sanitizeReturnTo(firstNonBlank(request.getParameter("returnTo"), request.getHeader("Referer")), cfg);
+
+            String nonce = WanKeycloakUtil.randomUrlToken(24);
+            Map<String,String> stateMap = new HashMap<>();
+            stateMap.put("tenantId", tenantId);
+            stateMap.put("nonce", nonce);
+            stateMap.put("returnTo", returnTo);
+            String state = WanKeycloakUtil.b64Url(MAPPER.writeValueAsString(stateMap));
+
+            HttpSession session = request.getSession(true);
+            session.setAttribute("WAN_KC_STATE", state);
+            session.setAttribute("WAN_KC_NONCE", nonce);
+            session.setAttribute("WAN_KEYCLOAK_TENANT_ID", tenantId);
+
+            response.sendRedirect(TOKENS.authorizationUrl(cfg, state, nonce));
+            return "success";
+        } catch (Exception e) {
+            request.setAttribute("_ERROR_MESSAGE_", e.getMessage());
+            return "error";
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static String oidcCallback(HttpServletRequest request, HttpServletResponse response) {
+        try {
+            String code = request.getParameter("code");
+            String state = request.getParameter("state");
+            if (code == null || state == null) {
+                throw new IllegalStateException("Missing code/state");
+            }
+
+            HttpSession session = request.getSession(true);
+            Object expectedState = session.getAttribute("WAN_KC_STATE");
+            if (expectedState == null || !state.equals(String.valueOf(expectedState))) {
+                throw new IllegalStateException("OIDC state missing or mismatch");
+            }
+
+            Map<String,String> stateMap = MAPPER.readValue(WanKeycloakUtil.fromB64Url(state), Map.class);
+            String tenantId = cleanTenantId(stateMap.get("tenantId"));
+            String nonce = firstNonBlank(stateMap.get("nonce"), String.valueOf(session.getAttribute("WAN_KC_NONCE")));
+            String returnTo = firstNonBlank(stateMap.get("returnTo"), "/partymgr/control/main");
+
+            Delegator tenantDelegator = tenantDelegator(tenantId);
+            OidcTenantConfig cfg = WanKeycloakConfig.forTenant(tenantDelegator, tenantId);
+            returnTo = sanitizeReturnTo(returnTo, cfg);
+
+            Map<String,Object> tokenSet = TOKENS.exchangeCode(cfg, code);
+            String idToken = String.valueOf(tokenSet.get("id_token"));
+            Map<String,Object> claims = TOKENS.validateIdToken(cfg, idToken, nonce);
+            verifyTenantClaims(cfg, claims);
+
+            GenericValue userLogin = new WanKeycloakUserMapper().ensureUserLogin(tenantDelegator, cfg, claims);
+            Set<String> roles = new WanKeycloakRoleMapper().extractRoles(claims, cfg.clientId);
+            new WanKeycloakRoleMapper().syncSecurityGroups(tenantDelegator, cfg, userLogin.getString("userLoginId"), roles);
+
+            session.setAttribute("userLogin", userLogin);
+            session.setAttribute("WAN_KEYCLOAK_ID_TOKEN", idToken);
+            session.setAttribute("WAN_KEYCLOAK_ACCESS_TOKEN", String.valueOf(tokenSet.get("access_token")));
+            session.setAttribute("WAN_KEYCLOAK_TENANT_ID", tenantId);
+            session.setAttribute("WAN_KEYCLOAK_CLAIMS", claims);
+            session.removeAttribute("WAN_KC_STATE");
+            session.removeAttribute("WAN_KC_NONCE");
+
+            response.sendRedirect(localMode() ? addTenantParam(returnTo, tenantId) : returnTo);
+            return "success";
+        } catch (Exception e) {
+            request.setAttribute("_ERROR_MESSAGE_", e.getMessage());
+            return "error";
+        }
+    }
+
+    public static String oidcLogout(HttpServletRequest request, HttpServletResponse response) {
+        try {
+            Delegator currentDelegator = (Delegator) request.getAttribute("delegator");
+            HttpSession session = request.getSession(false);
+            String tenantId = session == null ? null : cleanTenantId(String.valueOf(session.getAttribute("WAN_KEYCLOAK_TENANT_ID")));
+            if (tenantId == null || tenantId.isBlank() || "null".equals(tenantId)) {
+                tenantId = resolveTenantId(request, currentDelegator);
+            }
+
+            String idToken = session == null ? null : String.valueOf(session.getAttribute("WAN_KEYCLOAK_ID_TOKEN"));
+            Delegator tenantDelegator = tenantDelegator(tenantId);
+            OidcTenantConfig cfg = WanKeycloakConfig.forTenant(tenantDelegator, tenantId);
+
+            if (session != null) {
+                session.invalidate();
+            }
+
+            String logout = cfg.issuerUrl + "/protocol/openid-connect/logout"
+                    + "?client_id=" + enc(cfg.clientId)
+                    + "&post_logout_redirect_uri=" + enc(localMode() ? addTenantParam(cfg.postLogoutUri, tenantId) : cfg.postLogoutUri);
+            if (idToken != null && !idToken.isBlank() && !"null".equals(idToken)) {
+                logout += "&id_token_hint=" + enc(idToken);
+            }
+            response.sendRedirect(logout);
+            return "success";
+        } catch (Exception e) {
+            return "success";
+        }
+    }
+
+    private static Delegator tenantDelegator(String tenantId) throws Exception {
+        String cleanTenantId = cleanTenantId(tenantId);
+        if (cleanTenantId == null || cleanTenantId.isBlank()) {
+            throw new IllegalArgumentException("tenantId is required");
+        }
+        return DelegatorFactory.getDelegator("default#" + cleanTenantId);
+    }
+
+    private static String resolveTenantId(HttpServletRequest request, Delegator delegator) {
+        boolean localMode = UtilProperties.getPropertyValue("wankeycloak", "wankeycloak.localMode", "Y")
+                .equalsIgnoreCase("Y");
+
+        String tenantId;
+        if (localMode) {
+            // Localhost testing: query/hidden fields are the explicit developer tenant selector.
+            tenantId = firstNonBlank(
+                    request.getParameter("tenantId"),
+                    request.getParameter("userTenantId"),
+                    valueOf(request.getAttribute("userTenantId")),
+                    valueOf(request.getAttribute("tenantId"))
+            );
+        } else {
+            // Cloud/production: trust OFBiz host/FQDN tenant resolution first; query parameters must not override it.
+            tenantId = firstNonBlank(
+                    valueOf(request.getAttribute("userTenantId")),
+                    valueOf(request.getAttribute("tenantId")),
+                    tenantFromDelegator(delegator == null ? null : delegator.getDelegatorName())
+            );
+        }
+
+        if (tenantId == null) {
+            HttpSession session = request.getSession(false);
+            if (session != null) {
+                tenantId = firstNonBlank(
+                        valueOf(session.getAttribute("WAN_KEYCLOAK_TENANT_ID")),
+                        valueOf(session.getAttribute("userTenantId")),
+                        valueOf(session.getAttribute("tenantId"))
+                );
+            }
+        }
+
+        if (tenantId == null && delegator != null) {
+            tenantId = tenantFromDelegator(delegator.getDelegatorName());
+        }
+
+        if ((tenantId == null || tenantId.isBlank()) && localMode) {
+            // Local-dev fallback only. Production must resolve the tenant from FQDN/request attributes/session.
+            tenantId = UtilProperties.getPropertyValue("wankeycloak", "wankeycloak.defaultTenantId", "");
+        }
+
+        return cleanTenantId(tenantId);
+    }
+
+    private static String tenantFromDelegator(String delegatorName) {
+        if (delegatorName == null) return null;
+        String d = delegatorName.trim()
+                .replace("&amp;#x23;", "#")
+                .replace("&#x23;", "#")
+                .replace("&#35;", "#")
+                .replace("x23;", "#");
+        int hash = d.lastIndexOf('#');
+        if (hash >= 0 && hash + 1 < d.length()) {
+            return cleanTenantId(d.substring(hash + 1));
+        }
+        return null;
+    }
+
+    private static String cleanTenantId(String value) {
+        if (value == null) return null;
+        String v = value.trim()
+                .replace("&amp;#x23;", "#")
+                .replace("&#x23;", "#")
+                .replace("&#35;", "#");
+        if (v.contains("#")) {
+            v = v.substring(v.lastIndexOf('#') + 1);
+        }
+        if (v.contains("x23;")) {
+            v = v.substring(v.lastIndexOf("x23;") + 4);
+        }
+        if ("null".equalsIgnoreCase(v)) return null;
+        return v.trim();
+    }
+
+    private static void verifyTenantClaims(OidcTenantConfig cfg, Map<String,Object> claims) {
+        String tenantClaim = firstNonBlank(
+                WanKeycloakUtil.stringClaim(claims, "tenant_id"),
+                WanKeycloakUtil.stringClaim(claims, "wantokTenantId")
+        );
+        if (tenantClaim == null || tenantClaim.isBlank()) {
+            throw new IllegalStateException("Token does not contain required tenant_id claim");
+        }
+        if (!cfg.tenantId.equals(cleanTenantId(tenantClaim))) {
+            throw new IllegalStateException("Token tenant_id does not match requested tenant");
+        }
+    }
+
+    private static String sanitizeReturnTo(String candidate, OidcTenantConfig cfg) {
+        String fallback = firstNonBlank(cfg.postLoginPath, "/partymgr/control/main");
+        if (candidate == null || candidate.isBlank()) return fallback;
+        try {
+            URI uri = URI.create(candidate);
+            if (uri.isAbsolute()) {
+                // Accept same local dev host only. Production should pass relative paths.
+                String host = uri.getHost() == null ? "" : uri.getHost().toLowerCase(Locale.ROOT);
+                if (!("localhost".equals(host) || "127.0.0.1".equals(host))) {
+                    return fallback;
+                }
+                String path = uri.getRawPath() == null || uri.getRawPath().isBlank() ? fallback : uri.getRawPath();
+                return path + (uri.getRawQuery() == null ? "" : "?" + uri.getRawQuery());
+            }
+            if (candidate.startsWith("/") && !candidate.startsWith("//")) {
+                return candidate;
+            }
+        } catch (Exception ignored) { }
+        return fallback;
+    }
+
+    private static String addTenantParam(String uri, String tenantId) {
+        if (uri == null || uri.isBlank()) uri = "/partymgr/control/main";
+        if (tenantId == null || tenantId.isBlank()) return uri;
+        if (uri.contains("tenantId=")) return uri;
+        return uri + (uri.contains("?") ? "&" : "?") + "tenantId=" + enc(tenantId);
+    }
+
+    private static boolean localMode() {
+        return UtilProperties.getPropertyValue("wankeycloak", "wankeycloak.localMode", "Y")
+                .equalsIgnoreCase("Y");
+    }
+
+    private static String firstNonBlank(String... vals) {
+        for (String v : vals) {
+            if (v != null && !v.isBlank() && !"null".equalsIgnoreCase(v)) return v;
+        }
+        return null;
+    }
+
+    private static String valueOf(Object value) {
+        return value == null ? null : String.valueOf(value);
+    }
+
+    private static String enc(String s) {
+        return URLEncoder.encode(s == null ? "" : s, StandardCharsets.UTF_8);
+    }
+}

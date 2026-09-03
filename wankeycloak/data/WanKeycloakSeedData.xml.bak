@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-engine-xml>
+    <!-- Local development seed. Replace secrets with alias/resolution method before production. -->
+    <WanKeycloakTenantConfig tenantId="CLOUDCODE"
+        realmName="wantok-saas"
+        organizationAlias="cloudcode"
+        issuerUrl="http://localhost:8180/realms/wantok-saas"
+        authServerUrl="http://localhost:8180"
+        clientId="wantok-erp-web"
+        clientSecretAlias="WANTOK_KEYCLOAK_CLIENT_SECRET_CLOUDCODE_WEB"
+        redirectUri="http://localhost:8080/wankeycloak/control/oidcCallback"
+        postLoginPath="/partymgr/control/main"
+        postLogoutUri="http://localhost:8080/wankeycloak/control/loggedOut"
+        defaultOrgPartyId="CLOUDCODE_PNG"
+        enabled="Y"/>
+
+    <WanKeycloakRoleMap tenantId="CLOUDCODE" keycloakRole="cloudcode-tenant-admin" securityGroupId="FULLADMIN" enabled="Y" description="Cloudcode tenant administrator"/>
+    <WanKeycloakRoleMap tenantId="CLOUDCODE" keycloakRole="erp-admin" securityGroupId="FULLADMIN" enabled="Y" description="ERP administrator"/>
+    <WanKeycloakRoleMap tenantId="CLOUDCODE" keycloakRole="finance-user" securityGroupId="ACCOUNTING" enabled="Y" description="Finance user"/>
+    <WanKeycloakRoleMap tenantId="CLOUDCODE" keycloakRole="pos-cashier" securityGroupId="ORDERENTRY" enabled="Y" description="POS cashier"/>
+    <WanKeycloakRoleMap tenantId="CLOUDCODE" keycloakRole="pos-supervisor" securityGroupId="ORDERMGR" enabled="Y" description="POS supervisor"/>
+</entity-engine-xml>
