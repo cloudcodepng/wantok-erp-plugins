@@ -41,6 +41,7 @@ import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.util.EntityQuery;
 import org.apache.ofbiz.service.GenericServiceException;
+import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.ofbiz.service.ModelService;
 import org.apache.ofbiz.webapp.WebAppUtil;
 import org.apache.ofbiz.webapp.control.JWTManager;
@@ -81,7 +82,11 @@ public class APIAuthFilter implements ContainerRequestFilter {
             if (UtilValidate.isNotEmpty(service)) {
                 ModelService mdService = null;
                 try {
-                    mdService = WebAppUtil.getDispatcher(servletContext).getDispatchContext().getModelService(service);
+                    LocalDispatcher dispatcher = (LocalDispatcher) httpRequest.getAttribute("dispatcher");
+                    if (dispatcher == null) {
+                        dispatcher = WebAppUtil.getDispatcher(servletContext);
+                    }
+                    mdService = dispatcher.getDispatchContext().getModelService(service);
                 } catch (GenericServiceException e) {
                     Debug.logError(e.getMessage(), MODULE);
                 }
@@ -92,7 +97,10 @@ public class APIAuthFilter implements ContainerRequestFilter {
                 }
             }
         }
-        Delegator delegator = (Delegator) servletContext.getAttribute("delegator");
+        Delegator delegator = (Delegator) httpRequest.getAttribute("delegator");
+        if (delegator == null) {
+            delegator = WebAppUtil.getDelegator(servletContext);
+        }
         if (!isTokenBasedAuthentication(authorizationHeader)) {
             abortWithUnauthorized(requestContext, false, "Unauthorized: Access is denied due to invalid or absent Authorization header.");
             return;
