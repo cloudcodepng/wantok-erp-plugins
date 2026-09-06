@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="https://ofbiz.apache.org/dtds/services.xsd">
+    <description>Wantok ERP controlled demo/setup administration services</description>
+    <vendor>Cloudcode PNG Limited</vendor>
+    <version>1.0.0</version>
+
+    <service name="wanerpAdminCreateCompany" engine="java" auth="true" export="true" action="POST"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="adminCreateCompany">
+        <attribute name="partyId" type="String" mode="IN" optional="false"/>
+        <attribute name="groupName" type="String" mode="IN" optional="false"/>
+        <attribute name="preferredCurrencyUomId" type="String" mode="IN" optional="true"/>
+        <attribute name="partyIdOut" type="String" mode="OUT" optional="false"/>
+        <attribute name="duplicate" type="Boolean" mode="OUT" optional="false"/>
+    </service>
+
+    <service name="wanerpAdminCreateCatalog" engine="java" auth="true" export="true" action="POST"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="adminCreateCatalog">
+        <attribute name="prodCatalogId" type="String" mode="IN" optional="false"/>
+        <attribute name="catalogName" type="String" mode="IN" optional="false"/>
+        <attribute name="prodCatalogIdOut" type="String" mode="OUT" optional="false"/>
+        <attribute name="duplicate" type="Boolean" mode="OUT" optional="false"/>
+    </service>
+
+    <service name="wanerpAdminCreateCategory" engine="java" auth="true" export="true" action="POST"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="adminCreateCategory">
+        <attribute name="productCategoryId" type="String" mode="IN" optional="false"/>
+        <attribute name="categoryName" type="String" mode="IN" optional="false"/>
+        <attribute name="productCategoryTypeId" type="String" mode="IN" optional="true"/>
+        <attribute name="productCategoryIdOut" type="String" mode="OUT" optional="false"/>
+        <attribute name="duplicate" type="Boolean" mode="OUT" optional="false"/>
+    </service>
+
+    <service name="wanerpAdminLinkCatalogCategory" engine="java" auth="true" export="true" action="POST"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="adminLinkCatalogCategory">
+        <attribute name="prodCatalogId" type="String" mode="IN" optional="false"/>
+        <attribute name="productCategoryId" type="String" mode="IN" optional="false"/>
+        <attribute name="prodCatalogCategoryTypeId" type="String" mode="IN" optional="true"/>
+        <attribute name="created" type="Boolean" mode="OUT" optional="false"/>
+    </service>
+
+    <service name="wanerpAdminLinkCategoryChild" engine="java" auth="true" export="true" action="POST"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="adminLinkCategoryChild">
+        <attribute name="parentProductCategoryId" type="String" mode="IN" optional="false"/>
+        <attribute name="productCategoryId" type="String" mode="IN" optional="false"/>
+        <attribute name="created" type="Boolean" mode="OUT" optional="false"/>
+    </service>
+
+    <service name="wanerpAdminCreateProduct" engine="java" auth="true" export="true" action="POST"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="adminCreateProduct">
+        <attribute name="productId" type="String" mode="IN" optional="false"/>
+        <attribute name="internalName" type="String" mode="IN" optional="false"/>
+        <attribute name="productName" type="String" mode="IN" optional="true"/>
+        <attribute name="description" type="String" mode="IN" optional="true"/>
+        <attribute name="productTypeId" type="String" mode="IN" optional="true"/>
+        <attribute name="requireInventory" type="String" mode="IN" optional="true"/>
+        <attribute name="barcode" type="String" mode="IN" optional="true"/>
+        <attribute name="goodIdentificationTypeId" type="String" mode="IN" optional="true"/>
+        <attribute name="productIdOut" type="String" mode="OUT" optional="false"/>
+        <attribute name="duplicate" type="Boolean" mode="OUT" optional="false"/>
+    </service>
+
+    <service name="wanerpAdminLinkProductCategory" engine="java" auth="true" export="true" action="POST"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="adminLinkProductCategory">
+        <attribute name="productId" type="String" mode="IN" optional="false"/>
+        <attribute name="productCategoryId" type="String" mode="IN" optional="false"/>
+        <attribute name="created" type="Boolean" mode="OUT" optional="false"/>
+    </service>
+
+    <service name="wanerpAdminCreateFacility" engine="java" auth="true" export="true" action="POST"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="adminCreateFacility">
+        <attribute name="facilityId" type="String" mode="IN" optional="false"/>
+        <attribute name="facilityName" type="String" mode="IN" optional="false"/>
+        <attribute name="ownerPartyId" type="String" mode="IN" optional="false"/>
+        <attribute name="facilityTypeId" type="String" mode="IN" optional="true"/>
+        <attribute name="facilityIdOut" type="String" mode="OUT" optional="false"/>
+        <attribute name="duplicate" type="Boolean" mode="OUT" optional="false"/>
+    </service>
+
+    <service name="wanerpAdminCreateProductStore" engine="java" auth="true" export="true" action="POST"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="adminCreateProductStore">
+        <attribute name="productStoreId" type="String" mode="IN" optional="false"/>
+        <attribute name="storeName" type="String" mode="IN" optional="false"/>
+        <attribute name="payToPartyId" type="String" mode="IN" optional="false"/>
+        <attribute name="defaultCurrencyUomId" type="String" mode="IN" optional="true"/>
+        <attribute name="inventoryFacilityId" type="String" mode="IN" optional="true"/>
+        <attribute name="productStoreIdOut" type="String" mode="OUT" optional="false"/>
+        <attribute name="duplicate" type="Boolean" mode="OUT" optional="false"/>
+    </service>
+
+    <service name="wanerpAdminLinkStoreCatalog" engine="java" auth="true" export="true" action="POST"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="adminLinkStoreCatalog">
+        <attribute name="productStoreId" type="String" mode="IN" optional="false"/>
+        <attribute name="prodCatalogId" type="String" mode="IN" optional="false"/>
+        <attribute name="created" type="Boolean" mode="OUT" optional="false"/>
+    </service>
+
+    <service name="wanerpAdminSetProductPrice" engine="java" auth="true" export="true" action="POST"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="adminSetProductPrice">
+        <attribute name="productId" type="String" mode="IN" optional="false"/>
+        <attribute name="price" type="BigDecimal" mode="IN" optional="false"/>
+        <attribute name="currencyUomId" type="String" mode="IN" optional="true"/>
+        <attribute name="productPriceTypeId" type="String" mode="IN" optional="true"/>
+        <attribute name="productPricePurposeId" type="String" mode="IN" optional="true"/>
+        <attribute name="productStoreGroupId" type="String" mode="IN" optional="true"/>
+        <attribute name="created" type="Boolean" mode="OUT" optional="false"/>
+    </service>
+
+    <service name="wanerpAdminSetOpeningInventory" engine="java" auth="true" export="true" action="POST"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="adminSetOpeningInventory">
+        <attribute name="productId" type="String" mode="IN" optional="false"/>
+        <attribute name="facilityId" type="String" mode="IN" optional="false"/>
+        <attribute name="ownerPartyId" type="String" mode="IN" optional="true"/>
+        <attribute name="quantity" type="BigDecimal" mode="IN" optional="false"/>
+        <attribute name="resetExistingQuantity" type="Boolean" mode="IN" optional="true"/>
+        <attribute name="inventoryItemId" type="String" mode="OUT" optional="false"/>
+        <attribute name="quantityOnHandTotal" type="BigDecimal" mode="OUT" optional="false"/>
+        <attribute name="availableToPromiseTotal" type="BigDecimal" mode="OUT" optional="false"/>
+        <attribute name="changed" type="Boolean" mode="OUT" optional="false"/>
+    </service>
+
+    <service name="wanerpAdminRegisterEndUserCustomer" engine="java" auth="true" export="true" action="POST"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="registerEndUserCustomer">
+        <description>Administrative/test alias for the end-user customer registration workflow. The browser application should use the future Spring Boot facade and not call this endpoint directly.</description>
+        <attribute name="partyId" type="String" mode="IN" optional="true"/>
+        <attribute name="firstName" type="String" mode="IN" optional="false"/>
+        <attribute name="middleName" type="String" mode="IN" optional="true"/>
+        <attribute name="lastName" type="String" mode="IN" optional="false"/>
+        <attribute name="personalTitle" type="String" mode="IN" optional="true"/>
+        <attribute name="emailAddress" type="String" mode="IN" optional="false"/>
+        <attribute name="countryCode" type="String" mode="IN" optional="true"/>
+        <attribute name="areaCode" type="String" mode="IN" optional="true"/>
+        <attribute name="contactNumber" type="String" mode="IN" optional="true"/>
+        <attribute name="phoneContactMechPurposeTypeId" type="String" mode="IN" optional="true"/>
+        <attribute name="address1" type="String" mode="IN" optional="true"/>
+        <attribute name="address2" type="String" mode="IN" optional="true"/>
+        <attribute name="city" type="String" mode="IN" optional="true"/>
+        <attribute name="postalCode" type="String" mode="IN" optional="true"/>
+        <attribute name="stateProvinceGeoId" type="String" mode="IN" optional="true"/>
+        <attribute name="countryGeoId" type="String" mode="IN" optional="true"/>
+        <attribute name="postalContactMechPurposeTypeId" type="String" mode="IN" optional="true"/>
+        <attribute name="preferredCurrencyUomId" type="String" mode="IN" optional="true"/>
+        <attribute name="externalId" type="String" mode="IN" optional="true"/>
+        <attribute name="idempotencyKey" type="String" mode="IN" optional="true"/>
+        <attribute name="partyIdOut" type="String" mode="OUT" optional="false"/>
+        <attribute name="externalIdOut" type="String" mode="OUT" optional="true"/>
+        <attribute name="emailAddressOut" type="String" mode="OUT" optional="false"/>
+        <attribute name="emailContactMechId" type="String" mode="OUT" optional="true"/>
+        <attribute name="phoneContactMechId" type="String" mode="OUT" optional="true"/>
+        <attribute name="postalContactMechId" type="String" mode="OUT" optional="true"/>
+        <attribute name="customerRoleEnsured" type="Boolean" mode="OUT" optional="false"/>
+        <attribute name="created" type="Boolean" mode="OUT" optional="false"/>
+        <attribute name="duplicate" type="Boolean" mode="OUT" optional="false"/>
+    </service>
+
+    <service name="wanerpAdminBootstrapNeaDemo" engine="java" auth="true" export="true" action="POST"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="adminBootstrapNeaDemo">
+        <attribute name="resetExistingInventory" type="Boolean" mode="IN" optional="true"/>
+        <attribute name="companyPartyId" type="String" mode="OUT" optional="false"/>
+        <attribute name="prodCatalogId" type="String" mode="OUT" optional="false"/>
+        <attribute name="productCategoryId" type="String" mode="OUT" optional="false"/>
+        <attribute name="productStoreId" type="String" mode="OUT" optional="false"/>
+        <attribute name="facilityId" type="String" mode="OUT" optional="false"/>
+        <attribute name="productId" type="String" mode="OUT" optional="false"/>
+        <attribute name="barcode" type="String" mode="OUT" optional="false"/>
+        <attribute name="inventoryItemId" type="String" mode="OUT" optional="false"/>
+        <attribute name="price" type="BigDecimal" mode="OUT" optional="false"/>
+        <attribute name="currencyUomId" type="String" mode="OUT" optional="false"/>
+        <attribute name="openingQuantity" type="BigDecimal" mode="OUT" optional="false"/>
+        <attribute name="summary" type="Map" mode="OUT" optional="false"/>
+    </service>
+</services>

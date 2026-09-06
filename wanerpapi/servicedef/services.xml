@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="https://ofbiz.apache.org/dtds/services.xsd">
+    <description>Wantok ERP controlled REST integration services</description>
+    <vendor>Cloudcode PNG Limited</vendor>
+    <version>1.0.0</version>
+
+    <service name="wanerpApiHealth" engine="java" auth="true" export="true" action="GET"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="health">
+        <attribute name="status" type="String" mode="OUT" optional="false"/>
+        <attribute name="component" type="String" mode="OUT" optional="false"/>
+        <attribute name="delegatorName" type="String" mode="OUT" optional="true"/>
+        <attribute name="tenantId" type="String" mode="OUT" optional="true"/>
+        <attribute name="timestamp" type="String" mode="OUT" optional="false"/>
+    </service>
+
+    <service name="wanerpApiGetProduct" engine="java" auth="true" export="true" action="GET"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="getProduct">
+        <attribute name="idToFind" type="String" mode="IN" optional="false"/>
+        <attribute name="goodIdentificationTypeId" type="String" mode="IN" optional="true"/>
+        <attribute name="product" type="Map" mode="OUT" optional="true"/>
+        <attribute name="identifications" type="List" mode="OUT" optional="true"/>
+    </service>
+
+    <service name="wanerpApiSearchProducts" engine="java" auth="true" export="true" action="GET"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="searchProducts">
+        <attribute name="q" type="String" mode="IN" optional="false"/>
+        <attribute name="limit" type="Integer" mode="IN" optional="true"/>
+        <attribute name="products" type="List" mode="OUT" optional="false"/>
+        <attribute name="count" type="Integer" mode="OUT" optional="false"/>
+    </service>
+
+    <service name="wanerpApiGetProductsByProductStore" engine="java" auth="true" export="true" action="GET"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="getProductsByProductStore">
+        <attribute name="productStoreId" type="String" mode="IN" optional="false"/>
+        <attribute name="includeInactive" type="Boolean" mode="IN" optional="true"/>
+        <attribute name="productStore" type="Map" mode="OUT" optional="false"/>
+        <attribute name="catalogIds" type="List" mode="OUT" optional="false"/>
+        <attribute name="categoryIds" type="List" mode="OUT" optional="false"/>
+        <attribute name="products" type="List" mode="OUT" optional="false"/>
+        <attribute name="count" type="Integer" mode="OUT" optional="false"/>
+    </service>
+
+    <service name="wanerpApiGetProductStore" engine="java" auth="true" export="true" action="GET"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="getProductStore">
+        <attribute name="productStoreId" type="String" mode="IN" optional="false"/>
+        <attribute name="productStore" type="Map" mode="OUT" optional="false"/>
+        <attribute name="catalogs" type="List" mode="OUT" optional="false"/>
+        <attribute name="facilities" type="List" mode="OUT" optional="false"/>
+    </service>
+
+    <service name="wanerpApiGetFacility" engine="java" auth="true" export="true" action="GET"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="getFacility">
+        <attribute name="facilityId" type="String" mode="IN" optional="false"/>
+        <attribute name="facility" type="Map" mode="OUT" optional="false"/>
+    </service>
+
+    <service name="wanerpApiGetInventory" engine="java" auth="true" export="true" action="GET"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="getInventory">
+        <attribute name="productId" type="String" mode="IN" optional="false"/>
+        <attribute name="facilityId" type="String" mode="IN" optional="false"/>
+        <attribute name="quantityOnHandTotal" type="BigDecimal" mode="OUT" optional="false"/>
+        <attribute name="availableToPromiseTotal" type="BigDecimal" mode="OUT" optional="false"/>
+        <attribute name="accountingQuantityTotal" type="BigDecimal" mode="OUT" optional="false"/>
+    </service>
+
+    <service name="wanerpApiGetPrice" engine="java" auth="true" export="true" action="GET"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="getPrice">
+        <attribute name="productId" type="String" mode="IN" optional="false"/>
+        <attribute name="productStoreId" type="String" mode="IN" optional="true"/>
+        <attribute name="prodCatalogId" type="String" mode="IN" optional="true"/>
+        <attribute name="partyId" type="String" mode="IN" optional="true"/>
+        <attribute name="quantity" type="BigDecimal" mode="IN" optional="true"/>
+        <attribute name="currencyUomId" type="String" mode="IN" optional="true"/>
+        <attribute name="basePrice" type="BigDecimal" mode="OUT" optional="true"/>
+        <attribute name="price" type="BigDecimal" mode="OUT" optional="true"/>
+        <attribute name="listPrice" type="BigDecimal" mode="OUT" optional="true"/>
+        <attribute name="defaultPrice" type="BigDecimal" mode="OUT" optional="true"/>
+        <attribute name="discountRate" type="BigDecimal" mode="OUT" optional="true"/>
+        <attribute name="currencyUomIdOut" type="String" mode="OUT" optional="true"/>
+    </service>
+
+    <service name="wanerpApiGetParty" engine="java" auth="true" export="true" action="GET"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="getParty">
+        <attribute name="partyId" type="String" mode="IN" optional="false"/>
+        <attribute name="party" type="Map" mode="OUT" optional="false"/>
+        <attribute name="person" type="Map" mode="OUT" optional="true"/>
+        <attribute name="partyGroup" type="Map" mode="OUT" optional="true"/>
+        <attribute name="roles" type="List" mode="OUT" optional="false"/>
+        <attribute name="emails" type="List" mode="OUT" optional="false"/>
+        <attribute name="telecomNumbers" type="List" mode="OUT" optional="false"/>
+        <attribute name="postalAddresses" type="List" mode="OUT" optional="false"/>
+    </service>
+
+    <service name="wanerpApiCreateCustomer" engine="java" auth="true" export="true" action="POST"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="createCustomer">
+        <description>Backward-compatible customer creation endpoint. Uses the same idempotent implementation as end-user registration.</description>
+        <attribute name="partyId" type="String" mode="IN" optional="true"/>
+        <attribute name="firstName" type="String" mode="IN" optional="false"/>
+        <attribute name="middleName" type="String" mode="IN" optional="true"/>
+        <attribute name="lastName" type="String" mode="IN" optional="false"/>
+        <attribute name="personalTitle" type="String" mode="IN" optional="true"/>
+        <attribute name="emailAddress" type="String" mode="IN" optional="false"/>
+        <attribute name="countryCode" type="String" mode="IN" optional="true"/>
+        <attribute name="areaCode" type="String" mode="IN" optional="true"/>
+        <attribute name="contactNumber" type="String" mode="IN" optional="true"/>
+        <attribute name="phoneContactMechPurposeTypeId" type="String" mode="IN" optional="true"/>
+        <attribute name="address1" type="String" mode="IN" optional="true"/>
+        <attribute name="address2" type="String" mode="IN" optional="true"/>
+        <attribute name="city" type="String" mode="IN" optional="true"/>
+        <attribute name="postalCode" type="String" mode="IN" optional="true"/>
+        <attribute name="stateProvinceGeoId" type="String" mode="IN" optional="true"/>
+        <attribute name="countryGeoId" type="String" mode="IN" optional="true"/>
+        <attribute name="postalContactMechPurposeTypeId" type="String" mode="IN" optional="true"/>
+        <attribute name="preferredCurrencyUomId" type="String" mode="IN" optional="true"/>
+        <attribute name="externalId" type="String" mode="IN" optional="true"/>
+        <attribute name="idempotencyKey" type="String" mode="IN" optional="true"/>
+        <attribute name="partyIdOut" type="String" mode="OUT" optional="false"/>
+        <attribute name="externalIdOut" type="String" mode="OUT" optional="true"/>
+        <attribute name="emailAddressOut" type="String" mode="OUT" optional="false"/>
+        <attribute name="emailContactMechId" type="String" mode="OUT" optional="true"/>
+        <attribute name="phoneContactMechId" type="String" mode="OUT" optional="true"/>
+        <attribute name="postalContactMechId" type="String" mode="OUT" optional="true"/>
+        <attribute name="customerRoleEnsured" type="Boolean" mode="OUT" optional="false"/>
+        <attribute name="created" type="Boolean" mode="OUT" optional="false"/>
+        <attribute name="duplicate" type="Boolean" mode="OUT" optional="false"/>
+    </service>
+
+    <service name="wanerpApiRegisterEndUserCustomer" engine="java" auth="true" export="true" action="POST"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="registerEndUserCustomer">
+        <description>Create or reconcile the OFBiz CUSTOMER Party when a user registers in enduser.nea.wantoksys.com. Intended to be called by the trusted Spring Boot facade, not directly by the browser.</description>
+        <attribute name="partyId" type="String" mode="IN" optional="true"/>
+        <attribute name="firstName" type="String" mode="IN" optional="false"/>
+        <attribute name="middleName" type="String" mode="IN" optional="true"/>
+        <attribute name="lastName" type="String" mode="IN" optional="false"/>
+        <attribute name="personalTitle" type="String" mode="IN" optional="true"/>
+        <attribute name="emailAddress" type="String" mode="IN" optional="false"/>
+        <attribute name="countryCode" type="String" mode="IN" optional="true"/>
+        <attribute name="areaCode" type="String" mode="IN" optional="true"/>
+        <attribute name="contactNumber" type="String" mode="IN" optional="true"/>
+        <attribute name="phoneContactMechPurposeTypeId" type="String" mode="IN" optional="true"/>
+        <attribute name="address1" type="String" mode="IN" optional="true"/>
+        <attribute name="address2" type="String" mode="IN" optional="true"/>
+        <attribute name="city" type="String" mode="IN" optional="true"/>
+        <attribute name="postalCode" type="String" mode="IN" optional="true"/>
+        <attribute name="stateProvinceGeoId" type="String" mode="IN" optional="true"/>
+        <attribute name="countryGeoId" type="String" mode="IN" optional="true"/>
+        <attribute name="postalContactMechPurposeTypeId" type="String" mode="IN" optional="true"/>
+        <attribute name="preferredCurrencyUomId" type="String" mode="IN" optional="true"/>
+        <attribute name="externalId" type="String" mode="IN" optional="true"/>
+        <attribute name="idempotencyKey" type="String" mode="IN" optional="true"/>
+        <attribute name="partyIdOut" type="String" mode="OUT" optional="false"/>
+        <attribute name="externalIdOut" type="String" mode="OUT" optional="true"/>
+        <attribute name="emailAddressOut" type="String" mode="OUT" optional="false"/>
+        <attribute name="emailContactMechId" type="String" mode="OUT" optional="true"/>
+        <attribute name="phoneContactMechId" type="String" mode="OUT" optional="true"/>
+        <attribute name="postalContactMechId" type="String" mode="OUT" optional="true"/>
+        <attribute name="customerRoleEnsured" type="Boolean" mode="OUT" optional="false"/>
+        <attribute name="created" type="Boolean" mode="OUT" optional="false"/>
+        <attribute name="duplicate" type="Boolean" mode="OUT" optional="false"/>
+    </service>
+
+    <service name="wanerpApiGetOrder" engine="java" auth="true" export="true" action="GET"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="getOrder">
+        <attribute name="orderId" type="String" mode="IN" optional="false"/>
+        <attribute name="orderHeader" type="Map" mode="OUT" optional="false"/>
+        <attribute name="orderItems" type="List" mode="OUT" optional="false"/>
+        <attribute name="orderStatuses" type="List" mode="OUT" optional="false"/>
+        <attribute name="invoices" type="List" mode="OUT" optional="false"/>
+        <attribute name="payments" type="List" mode="OUT" optional="false"/>
+        <attribute name="paid" type="Boolean" mode="OUT" optional="false"/>
+    </service>
+
+    <service name="wanerpApiCreateSalesOrder" engine="java" auth="true" export="true" action="POST"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="createSalesOrder">
+        <attribute name="partyId" type="String" mode="IN" optional="false"/>
+        <attribute name="productStoreId" type="String" mode="IN" optional="false"/>
+        <attribute name="facilityId" type="String" mode="IN" optional="true"/>
+        <attribute name="productId" type="String" mode="IN" optional="false"/>
+        <attribute name="quantity" type="BigDecimal" mode="IN" optional="false"/>
+        <attribute name="unitPrice" type="BigDecimal" mode="IN" optional="true"/>
+        <attribute name="currencyUomId" type="String" mode="IN" optional="true"/>
+        <attribute name="prodCatalogId" type="String" mode="IN" optional="true"/>
+        <attribute name="salesChannelEnumId" type="String" mode="IN" optional="true"/>
+        <attribute name="idempotencyKey" type="String" mode="IN" optional="true"/>
+        <attribute name="orderId" type="String" mode="OUT" optional="false"/>
+        <attribute name="grandTotal" type="BigDecimal" mode="OUT" optional="true"/>
+        <attribute name="duplicate" type="Boolean" mode="OUT" optional="false"/>
+    </service>
+
+    <service name="wanerpApiCreateInvoiceForOrder" engine="java" auth="true" export="true" action="POST"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="createInvoiceForOrder">
+        <attribute name="orderId" type="String" mode="IN" optional="false"/>
+        <attribute name="invoiceId" type="String" mode="OUT" optional="false"/>
+        <attribute name="duplicate" type="Boolean" mode="OUT" optional="false"/>
+    </service>
+
+    <service name="wanerpApiCreatePayment" engine="java" auth="true" export="true" action="POST"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="createPayment">
+        <attribute name="partyIdFrom" type="String" mode="IN" optional="false"/>
+        <attribute name="partyIdTo" type="String" mode="IN" optional="false"/>
+        <attribute name="amount" type="BigDecimal" mode="IN" optional="false"/>
+        <attribute name="currencyUomId" type="String" mode="IN" optional="true"/>
+        <attribute name="paymentMethodTypeId" type="String" mode="IN" optional="true"/>
+        <attribute name="paymentTypeId" type="String" mode="IN" optional="true"/>
+        <attribute name="statusId" type="String" mode="IN" optional="true"/>
+        <attribute name="paymentRefNum" type="String" mode="IN" optional="true"/>
+        <attribute name="comments" type="String" mode="IN" optional="true"/>
+        <attribute name="idempotencyKey" type="String" mode="IN" optional="true"/>
+        <attribute name="paymentId" type="String" mode="OUT" optional="false"/>
+        <attribute name="duplicate" type="Boolean" mode="OUT" optional="false"/>
+    </service>
+
+    <service name="wanerpApiApplyPayment" engine="java" auth="true" export="true" action="POST"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="applyPayment">
+        <attribute name="paymentId" type="String" mode="IN" optional="false"/>
+        <attribute name="invoiceId" type="String" mode="IN" optional="false"/>
+        <attribute name="amountApplied" type="BigDecimal" mode="IN" optional="true"/>
+        <attribute name="paymentApplicationId" type="String" mode="OUT" optional="false"/>
+        <attribute name="duplicate" type="Boolean" mode="OUT" optional="false"/>
+    </service>
+
+    <service name="wanerpApiMarkOrderPaid" engine="java" auth="true" export="true" action="POST"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="markOrderPaid">
+        <attribute name="orderId" type="String" mode="IN" optional="false"/>
+        <attribute name="paymentId" type="String" mode="IN" optional="false"/>
+        <attribute name="invoiceId" type="String" mode="IN" optional="true"/>
+        <attribute name="invoiceStatusId" type="String" mode="OUT" optional="true"/>
+        <attribute name="paymentStatusId" type="String" mode="OUT" optional="true"/>
+        <attribute name="paid" type="Boolean" mode="OUT" optional="false"/>
+    </service>
+
+    <service name="wanerpApiCompletePaidSale" engine="java" auth="true" export="true" action="POST"
+             location="org.apache.ofbiz.wanerpapi.api.WanErpApiServices" invoke="completePaidSale">
+        <attribute name="partyId" type="String" mode="IN" optional="false"/>
+        <attribute name="productStoreId" type="String" mode="IN" optional="false"/>
+        <attribute name="facilityId" type="String" mode="IN" optional="true"/>
+        <attribute name="productId" type="String" mode="IN" optional="false"/>
+        <attribute name="quantity" type="BigDecimal" mode="IN" optional="false"/>
+        <attribute name="unitPrice" type="BigDecimal" mode="IN" optional="true"/>
+        <attribute name="currencyUomId" type="String" mode="IN" optional="true"/>
+        <attribute name="prodCatalogId" type="String" mode="IN" optional="true"/>
+        <attribute name="salesChannelEnumId" type="String" mode="IN" optional="true"/>
+        <attribute name="kumulPayReference" type="String" mode="IN" optional="false"/>
+        <attribute name="paymentAmount" type="BigDecimal" mode="IN" optional="true"/>
+        <attribute name="paymentMethodTypeId" type="String" mode="IN" optional="true"/>
+        <attribute name="idempotencyKey" type="String" mode="IN" optional="false"/>
+        <attribute name="orderId" type="String" mode="OUT" optional="false"/>
+        <attribute name="invoiceId" type="String" mode="OUT" optional="false"/>
+        <attribute name="paymentId" type="String" mode="OUT" optional="false"/>
+        <attribute name="paymentApplicationId" type="String" mode="OUT" optional="false"/>
+        <attribute name="grandTotal" type="BigDecimal" mode="OUT" optional="true"/>
+        <attribute name="paid" type="Boolean" mode="OUT" optional="false"/>
+        <attribute name="duplicate" type="Boolean" mode="OUT" optional="false"/>
+    </service>
+</services>

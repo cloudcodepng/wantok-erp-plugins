@@ -89,6 +89,7 @@ under the License.
 
 
         <#-- Wantok ERP Keycloak SSO login -->
+        <#--
       <#assign wanerpKcLoginUrl = "/wankeycloak/control/oidcLogin">
 
       <#if loginTenantId?has_content>
@@ -101,7 +102,7 @@ under the License.
         href="${wanerpKcLoginUrl}">
         SSO Login
       </a>
-
+      -->
       </div>
     </div>
   </div>

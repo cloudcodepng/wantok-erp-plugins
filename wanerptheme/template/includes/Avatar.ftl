@@ -96,6 +96,6 @@ under the License.
         <a class="dark-color" title="${uiLabelMap.CommonHelp}" href="${userDocUri!Static["org.apache.ofbiz.entity.util.EntityUtilProperties"].getPropertyValue("general", "userDocUri", delegator)}<#if helpAnchor??>#${helpAnchor}</#if>" target="help">${uiLabelMap.CommonHelp}</a>
         <!--<a id="visual-theme" class="user-pref-btn" href="<@ofbizUrl>ListVisualThemes</@ofbizUrl>">${uiLabelMap.CommonVisualThemes}</a>-->
         <a id="logout" class="user-pref-btn" href="<@ofbizUrl>logout</@ofbizUrl>${wanerpLogoutTenantParams!}">${uiLabelMap.CommonLogout}</a>
-        <a id="logout" href="/wankeycloak/control/oidcLogout${wanerpLogoutTenantParams!}">SSO ${uiLabelMap.CommonLogout}</a>
+        <!--<a id="logout" href="/wankeycloak/control/oidcLogout${wanerpLogoutTenantParams!}">SSO ${uiLabelMap.CommonLogout}</a>-->
     </div>
 </div>

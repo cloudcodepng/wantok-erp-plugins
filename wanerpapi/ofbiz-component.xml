@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ofbiz-component name="wanerpapi" enabled="true"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://ofbiz.apache.org/dtds/ofbiz-component.xsd">
+    <resource-loader name="main" type="component"/>
+    <entity-resource type="data" reader-name="ext-demo" loader="main" location="data/neademodata.xml"/>
+    <service-resource type="model" loader="main" location="servicedef/services.xml"/>
+    <service-resource type="model" loader="main" location="servicedef/services_admin.xml"/>
+</ofbiz-component>

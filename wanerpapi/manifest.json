@@ -1,0 +1,35 @@
+{
+  "plugin": "wanerpapi",
+  "version": "1.3.0",
+  "target": "Apache OFBiz release24.09 / Wantok ERP fork",
+  "operational_service_count": 18,
+  "admin_setup_service_count": 14,
+  "demo": {
+    "companyPartyId": "NEA",
+    "companyName": "National Energy Authority",
+    "onlineProductStoreId": "NEA_ONLINE_STORE",
+    "posProductStoreId": "NEA_POS_STORE",
+    "onlineCatalogId": "NEA_ONLINE_CATALOG",
+    "posCatalogId": "NEA_POS_CATALOG",
+    "facilityId": "NEA_HQ_WAREHOUSE",
+    "testProductId": "NEA-TEST-001",
+    "barcode": "NEA0001",
+    "price": "10.00",
+    "currency": "PGK",
+    "openingQuantity": "10",
+    "employees": 6,
+    "costCentres": 5,
+    "starterGlAccounts": 15
+  },
+  "seed_strategy": "seed,seed-initial + wanerpapi ext-demo; omit stock demo reader",
+  "tenant": "CLOUDCODE",
+  "tenant_application_database": "wanerp_cloudcode",
+  "tenant_config_database_preserved": "wanerptenant",
+  "enduser_customer_registration": {
+    "runtime_service": "wanerpApiRegisterEndUserCustomer",
+    "backward_compatible_service": "wanerpApiCreateCustomer",
+    "admin_test_alias": "wanerpAdminRegisterEndUserCustomer",
+    "identity_mapping": "Pass the external identity/Keycloak subject as externalId; idempotencyKey is the fallback identity key.",
+    "ofbiz_model": "Person Party + CUSTOMER PartyRole + email/optional telecom/postal contact mechanisms"
+  }
+}
