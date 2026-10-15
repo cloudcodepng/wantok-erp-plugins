@@ -40,6 +40,9 @@ public final class WanErpApiServices {
     private static final String DEFAULT_PAYMENT_TYPE = "CUSTOMER_PAYMENT";
     private static final String DEFAULT_PAYMENT_METHOD_TYPE = "EXT_OFFLINE";
     private static final String DEFAULT_PAYMENT_STATUS = "PMNT_RECEIVED";
+    private static final String KEYCLOAK_SUB_IDENTIFICATION_TYPE = "KEYCLOAK_SUB";
+    private static final String REGISTRATION_IDEMPOTENCY_IDENTIFICATION_TYPE = "WANERP_REG_IDEMP";
+    private static final int PARTY_IDENTIFICATION_VALUE_MAX_LENGTH = 60;
 
     private WanErpApiServices() { }
 
@@ -465,6 +468,11 @@ public final class WanErpApiServices {
     /**
      * Creates or reconciles an OFBiz Person Party in the CUSTOMER role for an NEA end-user registration.
      * The service is designed to be called by a trusted backend/facade after identity registration.
+     *
+     * <p>The public {@code externalId} field is the immutable Keycloak/OIDC subject ({@code sub}) and is
+     * stored as {@code PartyIdentification(KEYCLOAK_SUB)} rather than {@code Party.externalId}. The
+     * optional {@code idempotencyKey} is stored independently as
+     * {@code PartyIdentification(WANERP_REG_IDEMP)}.</p>
      */
     public static Map<String, Object> registerEndUserCustomer(DispatchContext dctx, Map<String, Object> context) {
         Delegator delegator = dctx.getDelegator();
@@ -476,7 +484,6 @@ public final class WanErpApiServices {
             String requestedPartyId = trimToNull(str(context, "partyId"));
             String externalId = trimToNull(str(context, "externalId"));
             String idempotencyKey = trimToNull(str(context, "idempotencyKey"));
-            String identityKey = externalId != null ? externalId : idempotencyKey;
 
             if (firstName == null) {
                 return error("firstName is required");
@@ -487,25 +494,36 @@ public final class WanErpApiServices {
             if (email == null) {
                 return error("emailAddress is required");
             }
-            if (identityKey == null && requestedPartyId == null) {
+            if (externalId == null && idempotencyKey == null && requestedPartyId == null) {
                 return error("externalId or idempotencyKey is required for idempotent end-user registration");
             }
+            validatePartyIdentificationValue("externalId", externalId);
+            validatePartyIdentificationValue("idempotencyKey", idempotencyKey);
 
             GenericValue byPartyId = requestedPartyId == null ? null
                     : EntityQuery.use(delegator).from("Party").where("partyId", requestedPartyId).queryOne();
-            GenericValue byIdentity = identityKey == null ? null
-                    : EntityQuery.use(delegator).from("Party").where("externalId", identityKey).queryFirst();
+            GenericValue byExternalIdentity = findPartyByIdentification(
+                    delegator, KEYCLOAK_SUB_IDENTIFICATION_TYPE, externalId);
+            GenericValue byIdempotencyKey = findPartyByIdentification(
+                    delegator, REGISTRATION_IDEMPOTENCY_IDENTIFICATION_TYPE, idempotencyKey);
+
+            // Backward compatibility for customers created before Keycloak subjects were moved
+            // from Party.externalId (VARCHAR(20)) to PartyIdentification.idValue (VARCHAR(60)).
+            GenericValue byLegacyExternalId = externalId == null || externalId.length() > 20 ? null
+                    : EntityQuery.use(delegator).from("Party").where("externalId", externalId).queryFirst();
             GenericValue byEmail = findPartyByEmail(delegator, email);
 
             String resolvedPartyId = null;
-            for (GenericValue candidate : new GenericValue[] {byPartyId, byIdentity, byEmail}) {
+            for (GenericValue candidate : new GenericValue[] {
+                    byPartyId, byExternalIdentity, byIdempotencyKey, byLegacyExternalId, byEmail
+            }) {
                 if (candidate == null) {
                     continue;
                 }
                 if (resolvedPartyId == null) {
                     resolvedPartyId = candidate.getString("partyId");
                 } else if (!resolvedPartyId.equals(candidate.getString("partyId"))) {
-                    return error("Registration identity/email already resolves to a different OFBiz Party");
+                    return error("Registration identity/idempotency key/email resolves to a different OFBiz Party");
                 }
             }
 
@@ -522,10 +540,10 @@ public final class WanErpApiServices {
                 copyIfPresent(context, input, "middleName", "personalTitle");
                 input.put("preferredCurrencyUomId", trimToNull(str(context, "preferredCurrencyUomId")) == null
                         ? DEFAULT_CURRENCY : trimToNull(str(context, "preferredCurrencyUomId")));
-                if (identityKey != null) {
-                    input.put("externalId", identityKey);
-                }
                 input.put("userLogin", login(context));
+
+                // Do not put the Keycloak subject into Party.externalId. OFBiz defines that
+                // field as VARCHAR(20), while PartyIdentification.idValue is VARCHAR(60).
                 Map<String, Object> result = run(dispatcher, "createPerson", input);
                 resolvedPartyId = (String) result.get("partyId");
                 party = require(delegator, "Party", "partyId", resolvedPartyId);
@@ -534,17 +552,15 @@ public final class WanErpApiServices {
                 GenericValue person = EntityQuery.use(delegator).from("Person")
                         .where("partyId", resolvedPartyId).queryOne();
                 if (person == null) {
-                    return error("Existing party " + resolvedPartyId + " is not a Person and cannot be used as an end-user customer");
-                }
-                String currentExternalId = trimToNull(party.getString("externalId"));
-                if (identityKey != null && currentExternalId != null && !identityKey.equals(currentExternalId)) {
-                    return error("Existing customer is already bound to a different external identity");
-                }
-                if (identityKey != null && currentExternalId == null) {
-                    party.set("externalId", identityKey);
-                    party.store();
+                    return error("Existing party " + resolvedPartyId
+                            + " is not a Person and cannot be used as an end-user customer");
                 }
             }
+
+            ensurePartyIdentification(
+                    delegator, resolvedPartyId, KEYCLOAK_SUB_IDENTIFICATION_TYPE, externalId);
+            ensurePartyIdentification(
+                    delegator, resolvedPartyId, REGISTRATION_IDEMPOTENCY_IDENTIFICATION_TYPE, idempotencyKey);
 
             run(dispatcher, "ensurePartyRole",
                     map("partyId", resolvedPartyId, "roleTypeId", "CUSTOMER", "userLogin", login(context)));
@@ -553,10 +569,9 @@ public final class WanErpApiServices {
             String phoneContactMechId = ensurePhone(delegator, dispatcher, resolvedPartyId, context, login(context));
             String postalContactMechId = ensurePostalAddress(delegator, dispatcher, resolvedPartyId, context, login(context));
 
-            party = require(delegator, "Party", "partyId", resolvedPartyId);
             Map<String, Object> out = ServiceUtil.returnSuccess();
             out.put("partyIdOut", resolvedPartyId);
-            out.put("externalIdOut", party.getString("externalId"));
+            out.put("externalIdOut", externalId);
             out.put("emailAddressOut", email);
             out.put("emailContactMechId", emailContactMechId);
             out.put("phoneContactMechId", phoneContactMechId);
@@ -581,6 +596,65 @@ public final class WanErpApiServices {
     private static String normalizeEmail(String value) {
         String email = trimToNull(value);
         return email == null ? null : email.toLowerCase(Locale.ROOT);
+    }
+
+    private static void validatePartyIdentificationValue(String fieldName, String value) {
+        if (value != null && value.length() > PARTY_IDENTIFICATION_VALUE_MAX_LENGTH) {
+            throw new IllegalArgumentException(fieldName + " exceeds PartyIdentification.idValue capacity ("
+                    + PARTY_IDENTIFICATION_VALUE_MAX_LENGTH + " characters)");
+        }
+    }
+
+    private static GenericValue findPartyByIdentification(Delegator delegator, String identificationTypeId,
+                                                          String idValue) throws GenericEntityException {
+        if (idValue == null) {
+            return null;
+        }
+
+        List<GenericValue> identifications = EntityQuery.use(delegator).from("PartyIdentification")
+                .where("partyIdentificationTypeId", identificationTypeId, "idValue", idValue).queryList();
+        if (identifications.size() > 1) {
+            throw new GenericEntityException("Multiple Parties are mapped to " + identificationTypeId
+                    + "=" + idValue + "; identity mapping is ambiguous");
+        }
+        if (identifications.isEmpty()) {
+            return null;
+        }
+
+        return EntityQuery.use(delegator).from("Party")
+                .where("partyId", identifications.get(0).getString("partyId")).queryOne();
+    }
+
+    private static void ensurePartyIdentification(Delegator delegator, String partyId,
+                                                  String identificationTypeId, String idValue)
+            throws GenericEntityException {
+        if (idValue == null) {
+            return;
+        }
+        validatePartyIdentificationValue(identificationTypeId, idValue);
+
+        GenericValue existingForParty = EntityQuery.use(delegator).from("PartyIdentification")
+                .where("partyId", partyId, "partyIdentificationTypeId", identificationTypeId).queryOne();
+        if (existingForParty != null) {
+            if (!idValue.equals(existingForParty.getString("idValue"))) {
+                throw new GenericEntityException("Party " + partyId + " is already mapped to a different "
+                        + identificationTypeId);
+            }
+            return;
+        }
+
+        GenericValue existingForValue = EntityQuery.use(delegator).from("PartyIdentification")
+                .where("partyIdentificationTypeId", identificationTypeId, "idValue", idValue).queryFirst();
+        if (existingForValue != null && !partyId.equals(existingForValue.getString("partyId"))) {
+            throw new GenericEntityException(identificationTypeId + "=" + idValue
+                    + " is already mapped to Party " + existingForValue.getString("partyId"));
+        }
+
+        GenericValue identification = delegator.makeValue("PartyIdentification");
+        identification.set("partyId", partyId);
+        identification.set("partyIdentificationTypeId", identificationTypeId);
+        identification.set("idValue", idValue);
+        delegator.create(identification);
     }
 
     private static GenericValue findPartyByEmail(Delegator delegator, String email) throws GenericEntityException {

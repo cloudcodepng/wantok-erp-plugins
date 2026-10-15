@@ -28,6 +28,7 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.HttpMethod;
@@ -43,7 +44,6 @@ import javax.ws.rs.core.Link;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import javax.ws.rs.ext.Provider;
 
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.UtilValidate;
@@ -55,12 +55,12 @@ import org.apache.ofbiz.service.ModelService;
 import org.apache.ofbiz.ws.rs.ApiServiceRequest;
 import org.apache.ofbiz.ws.rs.ServiceRequestProcessor;
 import org.apache.ofbiz.ws.rs.annotation.ServiceRequestValidator;
+import org.apache.ofbiz.ws.rs.filters.RequestBodyCachingFilter;
 import org.apache.ofbiz.ws.rs.response.Success;
 import org.apache.ofbiz.ws.rs.security.Secured;
 
 @Secured
 @Path(OFBizServiceResource.BASE_PATH)
-@Provider
 @ServiceRequestValidator
 public class OFBizServiceResource extends OFBizResource {
 
@@ -128,16 +128,52 @@ public class OFBizServiceResource extends OFBizResource {
      */
     @POST
     @Path("/{serviceName}")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response doPost(HashMap<String, Object> serviceInParams,
             @PathParam(value = "serviceName") String serviceName)
             throws IOException, GenericEntityException, GenericServiceException {
+
         if (UtilValidate.isEmpty(serviceInParams)) {
-            throw new BadRequestException("The request body is missing.");
+            Object cachedBody = httpRequest.getAttribute(
+                    RequestBodyCachingFilter.CACHED_BODY_ATTRIBUTE);
+
+            if (cachedBody instanceof byte[] && ((byte[]) cachedBody).length > 0) {
+                try {
+                    serviceInParams = new com.fasterxml.jackson.databind.ObjectMapper()
+                            .readValue(
+                                    (byte[]) cachedBody,
+                                    new com.fasterxml.jackson.core.type.TypeReference<HashMap<String, Object>>() {
+                                    });
+                } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+                    throw new BadRequestException(
+                            "Invalid JSON request body: " + e.getOriginalMessage(),
+                            e);
+                }
+            }
         }
+
+        if (UtilValidate.isEmpty(serviceInParams)) {
+            Object cachedBody = httpRequest.getAttribute(
+                    RequestBodyCachingFilter.CACHED_BODY_ATTRIBUTE);
+            int cachedLength = cachedBody instanceof byte[]
+                    ? ((byte[]) cachedBody).length
+                    : -1;
+
+            throw new BadRequestException(
+                    "The request body is missing. cachedLength=" + cachedLength
+                            + ", contentLength=" + httpRequest.getContentLengthLong());
+        }
+
         ServiceRequestProcessor processor = new ServiceRequestProcessor();
-        return processor.process(UtilMisc.toMap("serviceName", serviceName, "httpVerb", HttpMethod.POST, "requestMap",
-                serviceInParams, "dispatcher", getDispatcher(), "request", httpRequest));
+
+        return processor.process(
+                UtilMisc.toMap(
+                        "serviceName", serviceName,
+                        "httpVerb", HttpMethod.POST,
+                        "requestMap", serviceInParams,
+                        "dispatcher", getDispatcher(),
+                        "request", httpRequest));
     }
 
     /**
@@ -150,6 +186,7 @@ public class OFBizServiceResource extends OFBizResource {
      */
     @PUT
     @Path("/{serviceName}")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response doPut(HashMap<String, Object> serviceInParams, @PathParam(value = "serviceName") String serviceName)
             throws IOException, GenericEntityException, GenericServiceException {
@@ -171,6 +208,7 @@ public class OFBizServiceResource extends OFBizResource {
      */
     @PATCH
     @Path("/{serviceName}")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response doPatch(HashMap<String, Object> serviceInParams,
             @PathParam(value = "serviceName") String serviceName)
@@ -193,6 +231,7 @@ public class OFBizServiceResource extends OFBizResource {
      */
     @DELETE
     @Path("/{serviceName}")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response doDelete(HashMap<String, Object> serviceInParams,
             @PathParam(value = "serviceName") String serviceName)

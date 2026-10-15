@@ -1,66 +1,199 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE="${BASE:-http://localhost:8080}"
+BASE="${BASE:-http://cloudcode.localhost:8080}"
 OFBIZ_USER="${OFBIZ_USER:-admin}"
 OFBIZ_PASS="${OFBIZ_PASS:-ofbiz}"
 
-TOKEN="$(
-  curl -fsS -X POST "$BASE/rest/auth/token" \
+for cmd in curl jq; do
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    echo "Required command not found: $cmd" >&2
+    exit 1
+  fi
+done
+
+echo "Wantok ERP wanerpapi local smoke test"
+echo "BASE=$BASE"
+
+TOKEN_RESPONSE="$(
+  curl -sS -X POST "$BASE/rest/auth/token" \
     -u "$OFBIZ_USER:$OFBIZ_PASS" \
-    -H 'Accept: application/json' \
-  | jq -r '.data.access_token'
+    -H 'Accept: application/json'
 )"
 
-if [[ -z "$TOKEN" || "$TOKEN" == "null" ]]; then
-  echo 'Could not obtain OFBiz REST token.' >&2
+TOKEN="$(jq -r '.data.access_token // empty' <<<"$TOKEN_RESPONSE")"
+
+if [[ -z "$TOKEN" ]]; then
+  echo "Could not obtain OFBiz REST token." >&2
+  echo "$TOKEN_RESPONSE" | jq . >&2 || printf '%s\n' "$TOKEN_RESPONSE" >&2
   exit 1
 fi
 
+LAST_RESPONSE=""
+
+assert_api_ok() {
+  local service="$1"
+  local response="$2"
+
+  if ! jq -e '.statusCode == 200' >/dev/null 2>&1 <<<"$response"; then
+    echo "ERROR: $service did not return statusCode 200." >&2
+    exit 1
+  fi
+}
+
 get_api() {
-  local service="$1" params="$2"
+  local service="$1"
+  local params="$2"
+  local response
+
+  if ! jq -e . >/dev/null 2>&1 <<<"$params"; then
+    echo "ERROR: Invalid JSON parameters for $service: $params" >&2
+    exit 1
+  fi
+
   echo
   echo "===== $service ====="
-  curl -fsS -G "$BASE/rest/services/$service" \
-    -H "Authorization: Bearer $TOKEN" \
-    -H 'Accept: application/json' \
-    --data-urlencode "inParams=$params" | jq
+
+  response="$(
+    curl -sS -G "$BASE/rest/services/$service" \
+      -H "Authorization: Bearer $TOKEN" \
+      -H 'Accept: application/json' \
+      --data-urlencode "inParams=$params"
+  )"
+
+  echo "$response" | jq .
+  assert_api_ok "$service" "$response"
+  LAST_RESPONSE="$response"
 }
 
 post_api() {
-  local service="$1" params="$2"
+  local service="$1"
+  local body="$2"
+  local response
+
+  if ! jq -e . >/dev/null 2>&1 <<<"$body"; then
+    echo "ERROR: Invalid JSON request body for $service: $body" >&2
+    exit 1
+  fi
+
   echo
   echo "===== $service ====="
-  curl -fsS -X POST -G "$BASE/rest/services/$service" \
-    -H "Authorization: Bearer $TOKEN" \
-    -H 'Accept: application/json' \
-    --data-urlencode "inParams=$params" | jq
+
+  # IMPORTANT:
+  # POST services in this rest-api must receive the service parameters as the
+  # JSON request body. Do not use -G/inParams for POST requests.
+  response="$(
+    curl -sS -X POST "$BASE/rest/services/$service" \
+      -H "Authorization: Bearer $TOKEN" \
+      -H 'Accept: application/json' \
+      -H 'Content-Type: application/json' \
+      --data-raw "$body"
+  )"
+
+  echo "$response" | jq .
+  assert_api_ok "$service" "$response"
+  LAST_RESPONSE="$response"
 }
 
-get_api  wanerpApiHealth '{}'
-get_api  wanerpApiGetParty '{"partyId":"NEA"}'
-get_api  wanerpApiGetProduct '{"idToFind":"NEA-TEST-001"}'
-get_api  wanerpApiGetProduct '{"idToFind":"NEA0001","goodIdentificationTypeId":"SKU"}'
-get_api  wanerpApiSearchProducts '{"q":"NEA","limit":20}'
-get_api  wanerpApiGetProductsByProductStore '{"productStoreId":"NEA_ONLINE_STORE"}'
-get_api  wanerpApiGetProductStore '{"productStoreId":"NEA_ONLINE_STORE"}'
-get_api  wanerpApiGetFacility '{"facilityId":"NEA_HQ_WAREHOUSE"}'
-get_api  wanerpApiGetInventory '{"productId":"NEA-TEST-001","facilityId":"NEA_HQ_WAREHOUSE"}'
-get_api  wanerpApiGetPrice '{"productId":"NEA-TEST-001","productStoreId":"NEA_ONLINE_STORE","prodCatalogId":"NEA_ONLINE_CATALOG","quantity":1,"currencyUomId":"PGK"}'
-
 echo
-echo 'NEA ext-demo read/API smoke suite completed.'
-echo 'Next: create a customer, then run wanerpApiCreateSalesOrder or wanerpApiCompletePaidSale.'
-echo 'If these records are missing, first run plugins/wanerpapi/scripts/load-nea-demo-data.sh.'
+echo "===== read/setup API smoke suite ====="
 
+get_api wanerpApiHealth '{}'
+get_api wanerpApiGetParty '{"partyId":"NEA"}'
+get_api wanerpApiGetProduct '{"idToFind":"NEA-TEST-001"}'
+get_api wanerpApiGetProduct '{"idToFind":"NEA0001","goodIdentificationTypeId":"SKU"}'
+get_api wanerpApiSearchProducts '{"q":"NEA","limit":20}'
+get_api wanerpApiGetProductsByProductStore '{"productStoreId":"NEA_ONLINE_STORE"}'
+get_api wanerpApiGetProductStore '{"productStoreId":"NEA_ONLINE_STORE"}'
+get_api wanerpApiGetFacility '{"facilityId":"NEA_HQ_WAREHOUSE"}'
+get_api wanerpApiGetInventory '{"productId":"NEA-TEST-001","facilityId":"NEA_HQ_WAREHOUSE"}'
+get_api wanerpApiGetPrice '{"productId":"NEA-TEST-001","productStoreId":"NEA_ONLINE_STORE","prodCatalogId":"NEA_ONLINE_CATALOG","quantity":1,"currencyUomId":"PGK"}'
 get_api wanerpApiGetProductsByProductStore '{"productStoreId":"NEA_POS_STORE"}'
 
+echo
+echo "NEA read/setup API smoke suite completed successfully."
 
 echo
-echo '===== end-user registration / idempotency ====='
-REG='{"firstName":"Meri","lastName":"Demo","emailAddress":"meri.demo@example.com","preferredCurrencyUomId":"PGK","externalId":"keycloak-sub-nea-smoke-001","idempotencyKey":"enduser-register-keycloak-sub-nea-smoke-001"}'
+echo "===== end-user registration / Keycloak identity / idempotency ====="
+
+# Generate a new Keycloak-shaped subject for every run so the first
+# registration should create a customer and the second should resolve the
+# same Party as a duplicate.
+if [[ -r /proc/sys/kernel/random/uuid ]]; then
+  KEYCLOAK_SUB="$(cat /proc/sys/kernel/random/uuid)"
+elif command -v uuidgen >/dev/null 2>&1; then
+  KEYCLOAK_SUB="$(uuidgen | tr '[:upper:]' '[:lower:]')"
+else
+  echo "Could not generate a UUID for the Keycloak sub test." >&2
+  exit 1
+fi
+
+IDEMPOTENCY_KEY="wanerp-reg-${KEYCLOAK_SUB}"
+EMAIL_ADDRESS="meri.demo.${KEYCLOAK_SUB:0:8}@example.com"
+
+REG="$(
+  jq -cn \
+    --arg firstName "Meri" \
+    --arg lastName "Demo" \
+    --arg emailAddress "$EMAIL_ADDRESS" \
+    --arg countryCode "675" \
+    --arg contactNumber "79990001" \
+    --arg address1 "NEA API Smoke Test" \
+    --arg city "Port Moresby" \
+    --arg postalCode "121" \
+    --arg countryGeoId "PNG" \
+    --arg preferredCurrencyUomId "PGK" \
+    --arg externalId "$KEYCLOAK_SUB" \
+    --arg idempotencyKey "$IDEMPOTENCY_KEY" \
+    '{
+      firstName: $firstName,
+      lastName: $lastName,
+      emailAddress: $emailAddress,
+      countryCode: $countryCode,
+      contactNumber: $contactNumber,
+      address1: $address1,
+      city: $city,
+      postalCode: $postalCode,
+      countryGeoId: $countryGeoId,
+      preferredCurrencyUomId: $preferredCurrencyUomId,
+      externalId: $externalId,
+      idempotencyKey: $idempotencyKey
+    }'
+)"
+
+echo "Keycloak sub:   $KEYCLOAK_SUB"
+echo "Idempotency key: $IDEMPOTENCY_KEY"
+
 post_api wanerpApiRegisterEndUserCustomer "$REG"
+FIRST_RESPONSE="$LAST_RESPONSE"
+
+FIRST_PARTY_ID="$(jq -r '.data.partyIdOut // empty' <<<"$FIRST_RESPONSE")"
+
+if [[ -z "$FIRST_PARTY_ID" ]] ||    ! jq -e '.data.created == true and .data.duplicate == false' >/dev/null 2>&1 <<<"$FIRST_RESPONSE"; then
+  echo "ERROR: First registration did not create a new customer as expected." >&2
+  exit 1
+fi
+
 post_api wanerpApiRegisterEndUserCustomer "$REG"
+SECOND_RESPONSE="$LAST_RESPONSE"
+
+SECOND_PARTY_ID="$(jq -r '.data.partyIdOut // empty' <<<"$SECOND_RESPONSE")"
+
+if [[ "$SECOND_PARTY_ID" != "$FIRST_PARTY_ID" ]]; then
+  echo "ERROR: Idempotent registration resolved to a different Party." >&2
+  echo "First Party:  $FIRST_PARTY_ID" >&2
+  echo "Second Party: $SECOND_PARTY_ID" >&2
+  exit 1
+fi
+
+if ! jq -e '.data.created == false and .data.duplicate == true' >/dev/null 2>&1 <<<"$SECOND_RESPONSE"; then
+  echo "ERROR: Second registration was not reported as a duplicate." >&2
+  exit 1
+fi
 
 echo
-echo 'NEA read/setup + end-user registration smoke suite completed.'
+echo "PASS: customer registration created Party $FIRST_PARTY_ID."
+echo "PASS: second registration resolved to the same Party and returned duplicate=true."
+echo "PASS: wanerpapi local read/setup + end-user registration smoke suite completed."
+echo
+echo "NOTE: This script does not execute the transactional sales-order/invoice/payment APIs."

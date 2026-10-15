@@ -3,7 +3,7 @@
 ```bash
 TOKEN=$(
   curl -sS -X POST \
-    'http://localhost:8080/rest/auth/token' \
+    'http://cloudcode.localhost:8080/rest/auth/token' \
     -u 'admin:ofbiz' \
     -H 'Accept: application/json' \
   | jq -r '.data.access_token'
@@ -11,7 +11,7 @@ TOKEN=$(
 ```
 
 ```bash
-BASE='http://localhost:8080'
+BASE='http://cloudcode.localhost:8080'
 TOKEN='REPLACE_WITH_TOKEN'
 CUSTOMER='REPLACE_WITH_CUSTOMER_PARTY_ID'
 ```

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE="${BASE:-http://localhost:8080}"
+BASE="${BASE:-http://cloudcode.localhost:8080}"
 OFBIZ_USER="${OFBIZ_USER:-admin}"
 OFBIZ_PASS="${OFBIZ_PASS:-ofbiz}"
 REG_ID="${REG_ID:-nea-enduser-runtime-test-001}"
