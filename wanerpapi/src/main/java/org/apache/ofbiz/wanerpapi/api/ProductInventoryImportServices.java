@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.apache.ofbiz.entity.Delegator;
+import org.apache.ofbiz.entity.transaction.TransactionUtil;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.util.EntityQuery;
 import org.apache.ofbiz.service.DispatchContext;
@@ -228,16 +229,27 @@ public final class ProductInventoryImportServices {
             if (dryRun) return out;
 
             LocalDispatcher dispatcher=ctx.getDispatcher();
-            Map<String,Object> productArgs=attrs("productId",id,"productTypeId","FINISHED_GOOD",
+            // Product updates must not reset existing tax, shipping, variant, inventory or
+            // other operational flags for products managed by existing tenants/APIs.
+            if (existing != null) {
+                check("FINISHED_GOOD".equals(existing.getString("productTypeId")),
+                      "Cannot overwrite an existing non-finished-good product");
+                String previousUom = existing.getString("quantityUomId");
+                check(previousUom == null || previousUom.isBlank() || previousUom.equals(uom),
+                      "Existing product UOM differs; use a supervised UOM conversion");
+            }
+            Map<String,Object> productArgs=attrs("productId",id,
                     "internalName",name,"productName",name,
                     "description",string(p,"description").isBlank() ? null : string(p,"description"),
                     "brandName", brand.isBlank() ? null : brand,
-                    // Critical for KG merchandise: retain the correct inventory/sales UOM
-                    // and permit fractional quantities for variable-weight products.
                     "quantityUomId",uom,
                     "orderDecimalQuantity","WT_kg".equals(uom) ? "Y" : "N",
-                    "requireInventory","Y","chargeShipping","N","taxable","N",
-                    "isVirtual","N","isVariant","N","userLogin",user);
+                    "userLogin",user);
+            if (existing == null) {
+                productArgs.putAll(attrs("productTypeId","FINISHED_GOOD",
+                        "requireInventory","Y","chargeShipping","N","taxable","N",
+                        "isVirtual","N","isVariant","N"));
+            }
             call(dispatcher, existing == null ? "createProduct" : "updateProduct", productArgs);
             ensureIdentifier(d,dispatcher,user,id,"SKU",sku);
             if (!barcode.isEmpty()) ensureIdentifier(d,dispatcher,user,id,"EAN",barcode);
@@ -285,6 +297,13 @@ public final class ProductInventoryImportServices {
             }
             return out;
         } catch (Exception e) {
+            // A row can fail after some native service calls. Require rollback of the
+            // current OFBiz transaction so product and inventory do not diverge.
+            try {
+                TransactionUtil.setRollbackOnly("Product/inventory import failed", e);
+            } catch (Exception rollbackError) {
+                e.addSuppressed(rollbackError);
+            }
             return ServiceUtil.returnError("Product/inventory import failed: " + e.getMessage());
         }
     }
