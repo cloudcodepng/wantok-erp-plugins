@@ -169,4 +169,56 @@
         <attribute name="openingQuantity" type="BigDecimal" mode="OUT" optional="false"/>
         <attribute name="summary" type="Map" mode="OUT" optional="false"/>
     </service>
+    <!-- One transaction per row. Administratively gated by facade and CATALOG permissions. -->
+    <service name="wanerpAdminImportProductInventory" engine="java" auth="true" export="true" action="POST"
+             location="org.apache.ofbiz.wanerpapi.api.ProductInventoryImportServices" invoke="importItem">
+        <attribute name="tenantId" type="String" mode="IN" optional="false"/>
+        <attribute name="companyPartyId" type="String" mode="IN" optional="false"/>
+        <attribute name="facilityId" type="String" mode="IN" optional="false"/>
+        <attribute name="currencyUomId" type="String" mode="IN" optional="false"/>
+        <attribute name="productId" type="String" mode="IN" optional="false"/>
+        <attribute name="sku" type="String" mode="IN" optional="false"/>
+        <attribute name="productName" type="String" mode="IN" optional="false"/>
+        <attribute name="description" type="String" mode="IN" optional="true"/>
+        <attribute name="barcodeType" type="String" mode="IN" optional="true"/>
+        <attribute name="barcode" type="String" mode="IN" optional="true"/>
+        <attribute name="categoryId" type="String" mode="IN" optional="true"/>
+        <attribute name="supplierPartyId" type="String" mode="IN" optional="true"/>
+        <!-- Agreement lookup intentionally not required for product import -->
+        <attribute name="agreementId" type="String" mode="IN" optional="true"/>
+        <attribute name="brandName" type="String" mode="IN" optional="true"/>
+        <attribute name="retailPrice" type="String" mode="IN" optional="true"/>
+        <attribute name="unitCost" type="String" mode="IN" optional="true"/>
+        <attribute name="openingStockQty" type="String" mode="IN" optional="true"/>
+        <attribute name="inventoryMode" type="String" mode="INOUT" optional="true"/>
+        <attribute name="inventoryBatchId" type="String" mode="IN" optional="true"/>
+        <attribute name="sellUnit" type="String" mode="IN" optional="false"/>
+        <attribute name="productStoreId" type="String" mode="IN" optional="false"/>
+        <attribute name="prodCatalogId" type="String" mode="IN" optional="false"/>
+        <attribute name="recordStatus" type="String" mode="IN" optional="false"/>
+        <attribute name="sellable" type="String" mode="IN" optional="false"/>
+        <attribute name="sampleOnly" type="String" mode="IN" optional="false"/>
+        <attribute name="imageBase64" type="String" mode="IN" optional="true"/>
+        <attribute name="imageMimeType" type="String" mode="IN" optional="true"/>
+        <attribute name="dryRun" type="Boolean" mode="IN" optional="false"/>
+        <attribute name="allowDraft" type="Boolean" mode="IN" optional="true"/>
+        <attribute name="productIdOut" type="String" mode="OUT" optional="true"/>
+        <attribute name="outcome" type="String" mode="OUT" optional="true"/>
+        <attribute name="imageResourceId" type="String" mode="OUT" optional="true"/>
+        <attribute name="imageBytes" type="Integer" mode="OUT" optional="true"/>
+        <attribute name="retailPriceApplied" type="Boolean" mode="OUT" optional="true"/>
+        <attribute name="unitCostApplied" type="Boolean" mode="OUT" optional="true"/>
+        <attribute name="inventoryOutcome" type="String" mode="OUT" optional="true"/>
+        <attribute name="inventoryItemId" type="String" mode="OUT" optional="true"/>
+        <attribute name="facilityId" type="String" mode="OUT" optional="true"/>
+        <attribute name="requestedInventoryQty" type="BigDecimal" mode="OUT" optional="true"/>
+        <attribute name="inventoryPostedQty" type="BigDecimal" mode="OUT" optional="true"/>
+    </service>
+    <service name="wanerpAdminGetProductImage" engine="java" auth="true" export="true" action="GET"
+             location="org.apache.ofbiz.wanerpapi.api.ProductInventoryImportServices" invoke="getImage">
+        <attribute name="tenantId" type="String" mode="IN" optional="false"/>
+        <attribute name="productId" type="String" mode="IN" optional="false"/>
+        <attribute name="imageBase64" type="String" mode="OUT" optional="true"/>
+        <attribute name="mimeType" type="String" mode="OUT" optional="true"/>
+    </service>
 </services>

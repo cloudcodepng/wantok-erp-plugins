@@ -253,4 +253,11 @@
         <attribute name="paid" type="Boolean" mode="OUT" optional="false"/>
         <attribute name="duplicate" type="Boolean" mode="OUT" optional="false"/>
     </service>
+    <service name="wanerpApiGetProductImage" engine="java" auth="true" export="true" action="GET"
+             location="org.apache.ofbiz.wanerpapi.api.ProductInventoryImportServices" invoke="getImage">
+        <attribute name="tenantId" type="String" mode="IN" optional="false"/>
+        <attribute name="productId" type="String" mode="IN" optional="false"/>
+        <attribute name="imageBase64" type="String" mode="OUT" optional="true"/>
+        <attribute name="mimeType" type="String" mode="OUT" optional="true"/>
+    </service>
 </services>
