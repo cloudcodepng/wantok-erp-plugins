@@ -1,6 +1,9 @@
 package com.cloudcode.wantok.keycloak;
 
 public class OidcTenantConfig {
+    // ALLOW PUBLIC FIELDS
+    // This is an existing mutable configuration DTO. Keeping its field-based API
+    // avoids changing any callers of the Keycloak tenant configuration.
     public String tenantId;
     public String realmName;
     public String organizationAlias;
@@ -13,4 +16,5 @@ public class OidcTenantConfig {
     public String postLoginPath;
     public String postLogoutUri;
     public String defaultOrgPartyId;
+    // FORBID PUBLIC FIELDS
 }

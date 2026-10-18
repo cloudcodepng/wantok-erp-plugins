@@ -1,6 +1,5 @@
 package com.cloudcode.wantok.keycloak;
 
-import org.apache.ofbiz.base.util.UtilDateTime;
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.util.EntityQuery;
@@ -9,7 +8,19 @@ import java.sql.Timestamp;
 import java.util.Map;
 
 public class WanKeycloakUserMapper {
-    public GenericValue ensureUserLogin(Delegator delegator, OidcTenantConfig cfg, Map<String,Object> claims) throws Exception {
+    /**
+     * Resolves or creates a tenant-local OFBiz login for verified OIDC claims.
+     * Overrides must continue to use the supplied tenant delegator, never a
+     * shared/base delegator, and must preserve the subject mapping.
+     *
+     * @param delegator tenant-specific OFBiz delegator
+     * @param cfg tenant OIDC settings
+     * @param claims verified OIDC identity claims
+     * @return mapped OFBiz user login
+     * @throws Exception when entity access fails
+     */
+    public GenericValue ensureUserLogin(Delegator delegator, OidcTenantConfig cfg,
+            Map<String, Object> claims) throws Exception {
         String sub = WanKeycloakUtil.stringClaim(claims, "sub");
         String username = WanKeycloakUtil.stringClaim(claims, "preferred_username");
         String email = WanKeycloakUtil.stringClaim(claims, "email");
@@ -25,7 +36,8 @@ public class WanKeycloakUserMapper {
             user.create();
         }
         try {
-            GenericValue map = EntityQuery.use(delegator).from("WanKeycloakUserMap").where("tenantId", cfg.tenantId, "keycloakSubject", sub).queryOne();
+            GenericValue map = EntityQuery.use(delegator).from("WanKeycloakUserMap")
+                    .where("tenantId", cfg.tenantId, "keycloakSubject", sub).queryOne();
             if (map == null) {
                 map = delegator.makeValue("WanKeycloakUserMap");
                 map.set("tenantId", cfg.tenantId);

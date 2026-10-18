@@ -205,6 +205,8 @@
         <attribute name="productIdOut" type="String" mode="OUT" optional="true"/>
         <attribute name="outcome" type="String" mode="OUT" optional="true"/>
         <attribute name="imageResourceId" type="String" mode="OUT" optional="true"/>
+        <attribute name="imageContentId" type="String" mode="OUT" optional="true"/>
+        <attribute name="imageUrl" type="String" mode="OUT" optional="true"/>
         <attribute name="imageBytes" type="Integer" mode="OUT" optional="true"/>
         <attribute name="retailPriceApplied" type="Boolean" mode="OUT" optional="true"/>
         <attribute name="unitCostApplied" type="Boolean" mode="OUT" optional="true"/>

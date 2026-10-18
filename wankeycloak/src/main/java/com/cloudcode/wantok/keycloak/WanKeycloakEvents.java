@@ -44,7 +44,7 @@ public class WanKeycloakEvents {
             String returnTo = sanitizeReturnTo(firstNonBlank(request.getParameter("returnTo"), request.getHeader("Referer")), cfg);
 
             String nonce = WanKeycloakUtil.randomUrlToken(24);
-            Map<String,String> stateMap = new HashMap<>();
+            Map<String, String> stateMap = new HashMap<>();
             stateMap.put("tenantId", tenantId);
             stateMap.put("nonce", nonce);
             stateMap.put("returnTo", returnTo);
@@ -78,7 +78,7 @@ public class WanKeycloakEvents {
                 throw new IllegalStateException("OIDC state missing or mismatch");
             }
 
-            Map<String,String> stateMap = MAPPER.readValue(WanKeycloakUtil.fromB64Url(state), Map.class);
+            Map<String, String> stateMap = MAPPER.readValue(WanKeycloakUtil.fromB64Url(state), Map.class);
             String tenantId = cleanTenantId(stateMap.get("tenantId"));
             String nonce = firstNonBlank(stateMap.get("nonce"), String.valueOf(session.getAttribute("WAN_KC_NONCE")));
             String returnTo = firstNonBlank(stateMap.get("returnTo"), "/partymgr/control/main");
@@ -87,9 +87,9 @@ public class WanKeycloakEvents {
             OidcTenantConfig cfg = WanKeycloakConfig.forTenant(tenantDelegator, tenantId);
             returnTo = sanitizeReturnTo(returnTo, cfg);
 
-            Map<String,Object> tokenSet = TOKENS.exchangeCode(cfg, code);
+            Map<String, Object> tokenSet = TOKENS.exchangeCode(cfg, code);
             String idToken = String.valueOf(tokenSet.get("id_token"));
-            Map<String,Object> claims = TOKENS.validateIdToken(cfg, idToken, nonce);
+            Map<String, Object> claims = TOKENS.validateIdToken(cfg, idToken, nonce);
             verifyTenantClaims(cfg, claims);
 
             GenericValue userLogin = new WanKeycloakUserMapper().ensureUserLogin(tenantDelegator, cfg, claims);
@@ -106,7 +106,7 @@ public class WanKeycloakEvents {
             */
             userLogin.refresh();
             Set<String> roles = new WanKeycloakRoleMapper().extractRoles(claims, cfg.clientId);
-            
+
             new WanKeycloakRoleMapper().syncSecurityGroups(tenantDelegator, cfg, userLogin.getString("userLoginId"), roles);
 
             session.setAttribute("userLogin", userLogin);
@@ -117,7 +117,7 @@ public class WanKeycloakEvents {
                     String.valueOf(tokenSet.get("access_token")));
             session.setAttribute("WAN_KEYCLOAK_TENANT_ID", tenantId);
             session.setAttribute("WAN_KEYCLOAK_CLAIMS", claims);
-            
+
             session.removeAttribute("WAN_KC_STATE");
             session.removeAttribute("WAN_KC_NONCE");
 
@@ -128,7 +128,7 @@ public class WanKeycloakEvents {
             * attribute to be reused after a new Keycloak authentication.
             */
             request.removeAttribute("externalLoginKey");
-            
+
             /*
              * OFBiz web applications have separate servlet sessions.
              *
@@ -139,22 +139,22 @@ public class WanKeycloakEvents {
              */
             String externalLoginKey =
                     ExternalLoginKeysManager.getExternalLoginKey(request);
-            
+
             if (externalLoginKey == null || externalLoginKey.isBlank()) {
                 throw new IllegalStateException(
                         "Unable to create OFBiz externalLoginKey for SSO handoff");
             }
-            
+
             String target =
                     localMode() ? addTenantParam(returnTo, tenantId) : returnTo;
-            
+
             target = target
                     + (target.contains("?") ? "&" : "?")
                     + "externalLoginKey=" + enc(externalLoginKey);
-            
+
             response.sendRedirect(target);
             return "success";
-            
+
         } catch (Exception e) {
             request.setAttribute("_ERROR_MESSAGE_", e.getMessage());
             return "error";
@@ -165,9 +165,9 @@ public class WanKeycloakEvents {
         try {
             Delegator currentDelegator =
                     (Delegator) request.getAttribute("delegator");
-    
+
             HttpSession session = request.getSession(false);
-    
+
             /*
              * Capture the tenant and ID token BEFORE OFBiz logout destroys
              * the authenticated session.
@@ -176,25 +176,25 @@ public class WanKeycloakEvents {
                     ? null
                     : cleanTenantId(
                             valueOf(session.getAttribute("WAN_KEYCLOAK_TENANT_ID")));
-    
+
             if (tenantId == null
                     || tenantId.isBlank()
                     || "null".equalsIgnoreCase(tenantId)) {
-    
+
                 tenantId = resolveTenantId(request, currentDelegator);
             }
-    
+
             String idToken = session == null
                     ? null
                     : valueOf(session.getAttribute("WAN_KEYCLOAK_ID_TOKEN"));
-    
+
             Delegator tenantDelegator = tenantDelegator(tenantId);
-    
+
             OidcTenantConfig cfg =
                     WanKeycloakConfig.forTenant(
                             tenantDelegator,
                             tenantId);
-    
+
             /*
              * Build the Keycloak RP-Initiated Logout URL while we still
              * have access to the ID token and tenant configuration.
@@ -203,20 +203,20 @@ public class WanKeycloakEvents {
                     localMode()
                             ? addTenantParam(cfg.postLogoutUri, tenantId)
                             : cfg.postLogoutUri;
-    
+
             String logout =
                     cfg.issuerUrl
                     + "/protocol/openid-connect/logout"
                     + "?client_id=" + enc(cfg.clientId)
                     + "&post_logout_redirect_uri=" + enc(postLogoutUri);
-    
+
             if (idToken != null
                     && !idToken.isBlank()
                     && !"null".equalsIgnoreCase(idToken)) {
-    
+
                 logout += "&id_token_hint=" + enc(idToken);
             }
-    
+
             /*
              * IMPORTANT:
              *
@@ -226,7 +226,7 @@ public class WanKeycloakEvents {
              * login/session cleanup consistently across applications.
              */
             LoginWorker.logout(request, response);
-    
+
             /*
              * Do NOT use response.sendRedirect() here.
              *
@@ -239,14 +239,14 @@ public class WanKeycloakEvents {
              */
             response.setStatus(HttpServletResponse.SC_FOUND);
             response.setHeader("Location", logout);
-    
+
             return "success";
-    
+
         } catch (Exception e) {
             request.setAttribute(
                     "_ERROR_MESSAGE_",
                     "Keycloak logout failed: " + e.getMessage());
-    
+
             return "error";
         }
     }
@@ -270,15 +270,13 @@ public class WanKeycloakEvents {
                     request.getParameter("tenantId"),
                     request.getParameter("userTenantId"),
                     valueOf(request.getAttribute("userTenantId")),
-                    valueOf(request.getAttribute("tenantId"))
-            );
+                    valueOf(request.getAttribute("tenantId")));
         } else {
             // Cloud/production: trust OFBiz host/FQDN tenant resolution first; query parameters must not override it.
             tenantId = firstNonBlank(
                     valueOf(request.getAttribute("userTenantId")),
                     valueOf(request.getAttribute("tenantId")),
-                    tenantFromDelegator(delegator == null ? null : delegator.getDelegatorName())
-            );
+                    tenantFromDelegator(delegator == null ? null : delegator.getDelegatorName()));
         }
 
         if (tenantId == null) {
@@ -287,8 +285,7 @@ public class WanKeycloakEvents {
                 tenantId = firstNonBlank(
                         valueOf(session.getAttribute("WAN_KEYCLOAK_TENANT_ID")),
                         valueOf(session.getAttribute("userTenantId")),
-                        valueOf(session.getAttribute("tenantId"))
-                );
+                        valueOf(session.getAttribute("tenantId")));
             }
         }
 
@@ -334,11 +331,10 @@ public class WanKeycloakEvents {
         return v.trim();
     }
 
-    private static void verifyTenantClaims(OidcTenantConfig cfg, Map<String,Object> claims) {
+    private static void verifyTenantClaims(OidcTenantConfig cfg, Map<String, Object> claims) {
         String tenantClaim = firstNonBlank(
                 WanKeycloakUtil.stringClaim(claims, "tenant_id"),
-                WanKeycloakUtil.stringClaim(claims, "wantokTenantId")
-        );
+                WanKeycloakUtil.stringClaim(claims, "wantokTenantId"));
         if (tenantClaim == null || tenantClaim.isBlank()) {
             throw new IllegalStateException("Token does not contain required tenant_id claim");
         }

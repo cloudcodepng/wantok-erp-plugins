@@ -245,6 +245,18 @@ public final class ProductInventoryImportServices {
                 check(contentMime(image).equals(string(p, "imageMimeType")), "Image MIME mismatch");
             }
             // Images are optional. If supplied, MIME and size are strictly validated.
+            // Native createContent creates an OWNER ContentRole via SECA; it needs
+            // userLogin.partyId. Verify this even during dry-run, before any writes.
+            if (image.length > 0) {
+                String creatorPartyId = user.getString("partyId");
+                check(creatorPartyId != null && !creatorPartyId.isBlank()
+                        && find(d, "Party", "partyId", creatorPartyId) != null,
+                        "Image content creation requires a UserLogin linked to a valid Party");
+                check(find(d, "ProductContentType", "productContentTypeId", "ORIGINAL_IMAGE_URL") != null,
+                        "OFBiz ORIGINAL_IMAGE_URL content type missing");
+                check(find(d, "ContentType", "contentTypeId", "DOCUMENT") != null,
+                        "OFBiz DOCUMENT content type missing");
+            }
             GenericValue existing = find(d, "Product", "productId", id);
             Map<String, Object> out = ServiceUtil.returnSuccess();
             out.put("productId", id);
@@ -319,8 +331,16 @@ public final class ProductInventoryImportServices {
                 saveRetailPrice(d, dispatcher, user, id, currencyId, retailPrice);
             }
             if (image.length > 0) {
-                saveImage(d, id, image, string(p, "imageMimeType"));
+                String mime = string(p, "imageMimeType");
+                saveImage(d, id, image, mime);
+                // Reuse the IMAGE_OBJECT bytes already written above. All content
+                // and URL updates take place in the SAME importer row transaction.
+                String contentId = ensureImageContent(d, dispatcher, user, id, mime);
+                String url = "/content/control/ViewBinaryDataResource?contentId=" + contentId;
+                ensureProductImageUrls(d, dispatcher, user, id, url);
                 out.put("imageResourceId", imageId(id));
+                out.put("imageContentId", contentId);
+                out.put("imageUrl", url);
             }
             out.put("retailPriceApplied", retailPrice != null);
             out.put("unitCostApplied", unitCost != null && !supplier.isBlank());
@@ -477,8 +497,72 @@ public final class ProductInventoryImportServices {
             blob.setBytes("imageData", image);
             blob.store();
         }
-        // ProductContent/CMS association is an optional later enhancement after confirming
-        // the fork's ProductContentType IDs. POS uses getImage() directly.
+        // The caller associates the resource using native Content and ProductContent
+        // services, then sets the Product image URL fields. No duplicate JPEG upload.
+    }
+
+    /** Native OFBiz Content/ContentRole SECA + ProductContent, reuse existing blob. */
+    private static String ensureImageContent(Delegator d, LocalDispatcher dispatcher,
+            GenericValue user, String productId, String mime) throws Exception {
+        String resourceId = imageId(productId);
+        String contentId = null;
+        for (GenericValue c : EntityQuery.use(d).from("Content")
+                .where("dataResourceId", resourceId).queryList()) {
+            check("DOCUMENT".equals(c.getString("contentTypeId")),
+                    "Existing image Content is not a DOCUMENT");
+            check(contentId == null, "Multiple Content records reference the imported image");
+            contentId = c.getString("contentId");
+        }
+        if (contentId == null) {
+            // createContentFromDataResource delegates to createContent and its
+            // OWNER ContentRole SECA. Permission checks are not bypassed.
+            Map<String, Object> result = call(dispatcher, "createContentFromDataResource", attrs(
+                    "dataResourceId", resourceId, "contentTypeId", "DOCUMENT",
+                    "contentName", productId + " primary POS image",
+                    "mimeTypeId", mime, "statusId", "CTNT_IN_PROGRESS",
+                    "userLogin", user));
+            Object generated = result.get("contentId");
+            check(generated != null && !generated.toString().isBlank(),
+                    "createContentFromDataResource did not return contentId");
+            contentId = generated.toString();
+        }
+        // Preserve unrelated associations. Do not create a second primary image
+        // if some other Content is already assigned (even if currently expired).
+        boolean linked = false;
+        for (GenericValue pc : EntityQuery.use(d).from("ProductContent")
+                .where("productId", productId,
+                        "productContentTypeId", "ORIGINAL_IMAGE_URL").queryList()) {
+            check(contentId.equals(pc.getString("contentId")),
+                    "Product already has a different ORIGINAL_IMAGE_URL Content");
+            linked = true;
+        }
+        if (!linked) {
+            call(dispatcher, "createProductContent", attrs("productId", productId,
+                    "contentId", contentId, "productContentTypeId", "ORIGINAL_IMAGE_URL",
+                    "fromDate", Timestamp.from(Instant.now()), "userLogin", user));
+        }
+        return contentId;
+    }
+
+    /** Populate all five fields as proven by the native Catalog UI; keep existing values safe. */
+    private static void ensureProductImageUrls(Delegator d, LocalDispatcher dispatcher,
+            GenericValue user, String productId, String url) throws Exception {
+        GenericValue product = find(d, "Product", "productId", productId);
+        check(product != null, "Product not found after image creation");
+        String[] fields = {"smallImageUrl", "mediumImageUrl", "largeImageUrl",
+                "detailImageUrl", "originalImageUrl"};
+        Map<String, Object> update = attrs("productId", productId, "userLogin", user);
+        for (String field : fields) {
+            String previous = product.getString(field);
+            check(previous == null || previous.isBlank() || previous.equals(url),
+                    "Refusing to replace existing " + field + " for " + productId);
+            if (previous == null || previous.isBlank()) {
+                update.put(field, url);
+            }
+        }
+        if (update.size() > 2) {
+            call(dispatcher, "updateProduct", update);
+        }
     }
 
     /** Returned only through the authenticated Quarkus facade, never as a public file URL. */

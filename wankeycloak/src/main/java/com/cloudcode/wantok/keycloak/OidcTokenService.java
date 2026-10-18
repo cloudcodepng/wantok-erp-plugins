@@ -25,18 +25,36 @@ public class OidcTokenService {
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private final HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
 
-    public Map<String,Object> discovery(OidcTenantConfig cfg) throws Exception {
+    /**
+     * Obtains tenant-specific OIDC discovery metadata. Overrides must preserve
+     * the configured issuer and must not substitute metadata from another tenant.
+     *
+     * @param cfg tenant configuration
+     * @return discovery metadata
+     * @throws Exception when discovery or JSON processing fails
+     */
+    public Map<String, Object> discovery(OidcTenantConfig cfg) throws Exception {
         HttpRequest req = HttpRequest.newBuilder(URI.create(cfg.issuerUrl + "/.well-known/openid-configuration")).GET().build();
         HttpResponse<String> res = client.send(req, HttpResponse.BodyHandlers.ofString());
         if (res.statusCode() >= 300) {
             throw new IllegalStateException("Discovery failed: " + res.statusCode() + " " + res.body());
         }
-        return MAPPER.readValue(res.body(), new TypeReference<Map<String,Object>>(){});
+        return MAPPER.readValue(res.body(), new TypeReference<Map<String, Object>>() { });
     }
 
 
+    /**
+     * Constructs the tenant authorization URL. Overrides must preserve the
+     * caller-provided CSRF state, nonce, redirect URI, and tenant organization.
+     *
+     * @param cfg tenant configuration
+     * @param state server-generated login state
+     * @param nonce server-generated nonce
+     * @return authorization URL
+     * @throws Exception when discovery fails
+     */
     public String authorizationUrl(OidcTenantConfig cfg, String state, String nonce) throws Exception {
-        Map<String,Object> disc = discovery(cfg);
+        Map<String, Object> disc = discovery(cfg);
         String authorizationEndpoint = String.valueOf(disc.get("authorization_endpoint"));
         if (authorizationEndpoint == null || authorizationEndpoint.isBlank() || "null".equals(authorizationEndpoint)) {
             throw new IllegalStateException("OIDC discovery did not return authorization_endpoint");
@@ -54,14 +72,23 @@ public class OidcTokenService {
                 + "&nonce=" + enc(nonce);
     }
 
-    public Map<String,Object> exchangeCode(OidcTenantConfig cfg, String code) throws Exception {
-        Map<String,Object> disc = discovery(cfg);
+    /**
+     * Exchanges an authorization code with the selected tenant provider.
+     * Overrides must not disclose the client secret or mix tenant credentials.
+     *
+     * @param cfg tenant configuration
+     * @param code authorization code
+     * @return token response
+     * @throws Exception when token exchange or JSON processing fails
+     */
+    public Map<String, Object> exchangeCode(OidcTenantConfig cfg, String code) throws Exception {
+        Map<String, Object> disc = discovery(cfg);
         String tokenEndpoint = String.valueOf(disc.get("token_endpoint"));
-        String body = "grant_type=authorization_code" +
-                "&code=" + enc(code) +
-                "&redirect_uri=" + enc(cfg.redirectUri) +
-                "&client_id=" + enc(cfg.clientId) +
-                "&client_secret=" + enc(cfg.clientSecret);
+        String body = "grant_type=authorization_code"
+                + "&code=" + enc(code)
+                + "&redirect_uri=" + enc(cfg.redirectUri)
+                + "&client_id=" + enc(cfg.clientId)
+                + "&client_secret=" + enc(cfg.clientSecret);
         HttpRequest req = HttpRequest.newBuilder(URI.create(tokenEndpoint))
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .POST(HttpRequest.BodyPublishers.ofString(body))
@@ -70,11 +97,21 @@ public class OidcTokenService {
         if (res.statusCode() >= 300) {
             throw new IllegalStateException("Token exchange failed: " + res.statusCode() + " " + res.body());
         }
-        return MAPPER.readValue(res.body(), new TypeReference<Map<String,Object>>(){});
+        return MAPPER.readValue(res.body(), new TypeReference<Map<String, Object>>() { });
     }
 
-    public Map<String,Object> validateIdToken(OidcTenantConfig cfg, String idToken, String expectedNonce) throws Exception {
-        Map<String,Object> disc = discovery(cfg);
+    /**
+     * Validates an ID token signature, issuer, audience, expiry and nonce.
+     * Any override must retain all checks before returning token claims.
+     *
+     * @param cfg tenant configuration
+     * @param idToken JWT returned by the provider
+     * @param expectedNonce nonce retained in the server-side session
+     * @return verified token claims
+     * @throws Exception for invalid tokens or JWKS retrieval failures
+     */
+    public Map<String, Object> validateIdToken(OidcTenantConfig cfg, String idToken, String expectedNonce) throws Exception {
+        Map<String, Object> disc = discovery(cfg);
         String jwksUri = String.valueOf(disc.get("jwks_uri"));
         HttpResponse<String> jwksRes = client.send(HttpRequest.newBuilder(URI.create(jwksUri)).GET().build(), HttpResponse.BodyHandlers.ofString());
         if (jwksRes.statusCode() >= 300) {
@@ -95,7 +132,7 @@ public class OidcTokenService {
             throw new IllegalStateException("Invalid ID token signature");
         }
 
-        Map<String,Object> claims = jwt.getJWTClaimsSet().getClaims();
+        Map<String, Object> claims = jwt.getJWTClaimsSet().getClaims();
         if (!cfg.issuerUrl.equals(claims.get("iss"))) {
             throw new IllegalStateException("Invalid issuer: " + claims.get("iss"));
         }

@@ -16,7 +16,7 @@ import org.apache.ofbiz.entity.util.EntityQuery;
 public final class WanKeycloakConfig {
     private static final String RESOURCE = "wankeycloak";
 
-    private WanKeycloakConfig() {}
+    private WanKeycloakConfig() { }
 
     public static OidcTenantConfig forTenant(Delegator delegator, String tenantId) throws Exception {
         if (tenantId == null || tenantId.isBlank()) {
@@ -53,18 +53,23 @@ public final class WanKeycloakConfig {
 
         cfg.realmName = UtilProperties.getPropertyValue(RESOURCE, "wankeycloak.defaultRealm", "wantok-saas");
         cfg.organizationAlias = UtilProperties.getPropertyValue(RESOURCE, "wankeycloak.defaultOrganizationAlias", "cloudcode");
-        cfg.issuerUrl = UtilProperties.getPropertyValue(RESOURCE, "wankeycloak.defaultIssuer", "http://localhost:8180/realms/wantok-saas");
+        cfg.issuerUrl = UtilProperties.getPropertyValue(RESOURCE, "wankeycloak.defaultIssuer",
+                "http://localhost:8180/realms/wantok-saas");
         if (cfg.issuerUrl.contains("/realms/")) {
             cfg.authServerUrl = cfg.issuerUrl.substring(0, cfg.issuerUrl.indexOf("/realms/"));
         } else {
-            cfg.authServerUrl = UtilProperties.getPropertyValue(RESOURCE, "wankeycloak.defaultAuthServerUrl", "http://localhost:8180");
+            cfg.authServerUrl = UtilProperties.getPropertyValue(RESOURCE, "wankeycloak.defaultAuthServerUrl",
+                    "http://localhost:8180");
         }
         cfg.clientId = UtilProperties.getPropertyValue(RESOURCE, "wankeycloak.defaultClientId", "wantok-erp-web");
-        cfg.clientSecretAlias = UtilProperties.getPropertyValue(RESOURCE, "wankeycloak.defaultClientSecretAlias", "WANTOK_KEYCLOAK_CLIENT_SECRET_CLOUDCODE_WEB");
+        cfg.clientSecretAlias = UtilProperties.getPropertyValue(RESOURCE, "wankeycloak.defaultClientSecretAlias",
+                "WANTOK_KEYCLOAK_CLIENT_SECRET_CLOUDCODE_WEB");
         cfg.clientSecret = resolveClientSecret(cfg.clientSecretAlias);
-        cfg.redirectUri = UtilProperties.getPropertyValue(RESOURCE, "wankeycloak.defaultRedirectUri", "http://localhost:8080/wankeycloak/control/oidcCallback");
+        cfg.redirectUri = UtilProperties.getPropertyValue(RESOURCE, "wankeycloak.defaultRedirectUri",
+                "http://localhost:8080/wankeycloak/control/oidcCallback");
         cfg.postLoginPath = UtilProperties.getPropertyValue(RESOURCE, "wankeycloak.defaultPostLoginPath", "/partymgr/control/main");
-        cfg.postLogoutUri = UtilProperties.getPropertyValue(RESOURCE, "wankeycloak.defaultPostLogoutUri", "http://localhost:8080/wankeycloak/control/loggedOut");
+        cfg.postLogoutUri = UtilProperties.getPropertyValue(RESOURCE, "wankeycloak.defaultPostLogoutUri",
+                "http://localhost:8080/wankeycloak/control/loggedOut");
         cfg.defaultOrgPartyId = UtilProperties.getPropertyValue(RESOURCE, "wankeycloak.defaultOrgPartyId", "CLOUDCODE_PNG");
         return cfg;
     }

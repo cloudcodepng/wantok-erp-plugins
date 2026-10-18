@@ -33,11 +33,14 @@ import org.apache.ofbiz.webapp.WebAppUtil;
 @Provider
 public abstract class OFBizResource implements IOFBizResource {
 
+    // ALLOW PUBLIC FIELDS
+    // Preserve JAX-RS field injection and the protected subclass contract.
     @Context
     protected ServletContext servletContext;
 
     @Context
     protected HttpServletRequest httpRequest;
+    // FORBID PUBLIC FIELDS
 
     @Override
     public Delegator getDelegator() {

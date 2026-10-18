@@ -9,7 +9,7 @@ import org.apache.ofbiz.service.ServiceUtil;
 import java.util.Map;
 
 public class WanKeycloakServices {
-    public static Map<String,Object> auditLogin(DispatchContext dctx, Map<String,Object> context) {
+    public static Map<String, Object> auditLogin(DispatchContext dctx, Map<String, Object> context) {
         try {
             Delegator delegator = dctx.getDelegator();
             GenericValue audit = delegator.makeValue("WanKeycloakSessionAudit");

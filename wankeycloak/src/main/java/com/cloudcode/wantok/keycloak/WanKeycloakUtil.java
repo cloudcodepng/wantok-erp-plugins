@@ -7,7 +7,7 @@ import java.util.Map;
 
 public final class WanKeycloakUtil {
     private static final SecureRandom RANDOM = new SecureRandom();
-    private WanKeycloakUtil() {}
+    private WanKeycloakUtil() { }
 
     public static String randomUrlToken(int bytes) {
         byte[] data = new byte[bytes];
