@@ -1,0 +1,3 @@
+# OFBiz wanerpapi v2.1 hardware patch
+
+Additive, no schema changes. Adds HMAC-verified `wanerpPosSetDrawerMode` with separate admin authorization and physical confirmation; `saveTerminal` preserves approved drawer state during ordinary same-location updates but disarms on terminal remapping/disable. `saveDevice` restricts connections, prevents credential fields in settings JSON and disarms an existing electronic drawer when the printer/drawer is edited. Existing 24.09 financial/order/inventory and receipt services are unchanged. `WanPosTerminalDevice` remains one device type per terminal. See Next.js `docs/HARDWARE_UAT_V2_1.md` in the complete release for UAT instructions.

@@ -1,0 +1,535 @@
+package org.apache.ofbiz.wanerpapi.api;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.Map;
+import org.apache.ofbiz.entity.Delegator;
+import org.apache.ofbiz.entity.GenericValue;
+import org.apache.ofbiz.entity.util.EntityQuery;
+import org.apache.ofbiz.service.DispatchContext;
+import org.apache.ofbiz.service.ServiceUtil;
+
+/**
+ * SHONG v3.9.1: independent authorization and actual drawer ownership.
+ * All writes participate in the calling OFBiz service transaction.
+ * No native GL entries are created or changed by this class.
+ */
+public final class WanErpPosCashControls {
+    private static final long APPROVAL_LIFETIME_MS = 15L * 60L * 1000L;
+
+    private WanErpPosCashControls() {
+    }
+
+    private static BigDecimal money(Object value) {
+        if (value == null) {
+            throw new IllegalArgumentException("Cash amount required");
+        }
+        BigDecimal n = new BigDecimal(value.toString());
+        if (n.signum() < 0 || n.stripTrailingZeros().scale() > 2) {
+            throw new IllegalArgumentException("Invalid cash amount");
+        }
+        return n.setScale(2, RoundingMode.UNNECESSARY);
+    }
+
+    private static String required(Object value, String field) {
+        String result = value == null ? "" : value.toString();
+        if (!result.matches("[A-Za-z0-9_.:-]{1,80}")) {
+            throw new IllegalArgumentException("Invalid " + field);
+        }
+        return result;
+    }
+
+    private static String hash(String plain) throws Exception {
+        byte[] digest = MessageDigest.getInstance("SHA-256")
+                .digest(plain.getBytes(StandardCharsets.UTF_8));
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(digest);
+    }
+
+    /** Length-prefixed fields prevent delimiter ambiguity in authorisation binding. */
+    private static void appendField(StringBuilder b, String value) {
+        b.append(value.length()).append(':').append(value);
+    }
+
+    private static String reason(Object value) {
+        if (!(value instanceof String)) {
+            throw new IllegalArgumentException("Refund reason required");
+        }
+        String reason = ((String) value).trim();
+        if (reason.isEmpty() || reason.length() > 255) {
+            throw new IllegalArgumentException("Refund reason required (maximum 255 characters)");
+        }
+        return reason;
+    }
+
+    private static String signature(String operation, String saleKey, String shiftId,
+            String terminalId, String reason, List<?> items) throws Exception {
+        StringBuilder b = new StringBuilder();
+        appendField(b, operation);
+        appendField(b, saleKey);
+        appendField(b, shiftId);
+        appendField(b, terminalId);
+        appendField(b, reason);
+        if ("RETURN".equals(operation)) {
+            if (items == null || items.isEmpty()) {
+                throw new IllegalArgumentException("Return approval must specify items");
+            }
+            List<String> lines = new ArrayList<>();
+            Set<String> seen = new HashSet<>();
+            for (Object item : items) {
+                if (!(item instanceof Map<?, ?>)) {
+                    throw new IllegalArgumentException("Invalid approved return line");
+                }
+                Map<?, ?> line = (Map<?, ?>) item;
+                String seq = required(line.get("orderItemSeqId"), "orderItemSeqId");
+                if (!seen.add(seq)) {
+                    throw new IllegalArgumentException("Duplicate approved order item");
+                }
+                BigDecimal qty = new BigDecimal(String.valueOf(line.get("quantity")));
+                if (qty.signum() <= 0 || qty.stripTrailingZeros().scale() > 3) {
+                    throw new IllegalArgumentException("Invalid approved return quantity");
+                }
+                lines.add(seq + ':' + qty.stripTrailingZeros().toPlainString());
+            }
+            lines.sort(Comparator.naturalOrder());
+            for (String line : lines) {
+                appendField(b, line);
+            }
+        }
+        return hash(b.toString());
+    }
+
+    private static GenericValue openShift(Delegator d, String id) throws Exception {
+        GenericValue shift = EntityQuery.use(d).from("WanPosShift")
+                .where("shiftId", id).queryOne();
+        if (shift == null || !"OPEN".equals(shift.getString("statusId"))) {
+            throw new IllegalArgumentException("Payout shift must be OPEN");
+        }
+        return shift;
+    }
+
+    /** Serialize drawer cash postings with closing this same shift. */
+    public static void lockShift(Delegator d, String shiftId) throws Exception {
+        int updated = d.storeByCondition("WanPosShift", Map.of("statusId", "OPEN"),
+                org.apache.ofbiz.entity.condition.EntityCondition.makeCondition(
+                        Map.of("shiftId", shiftId, "statusId", "OPEN")));
+        if (updated != 1) {
+            throw new IllegalArgumentException("Shift closed while cash event was processing");
+        }
+    }
+
+    private static void managerGrant(Delegator d, String managerId,
+            String storeId, String facilityId) throws Exception {
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        for (GenericValue grant : EntityQuery.use(d).from("WanPosUserStoreGrant")
+                .where("userLoginId", managerId, "productStoreId", storeId,
+                        "accessCode", "MANAGE").queryList()) {
+            Timestamp from = grant.getTimestamp("fromDate");
+            Timestamp thru = grant.getTimestamp("thruDate");
+            if ((from == null || !from.after(now)) && (thru == null || thru.after(now))
+                    && (grant.getString("facilityId") == null
+                    || facilityId.equals(grant.getString("facilityId")))) {
+                return;
+            }
+        }
+        throw new IllegalArgumentException("Current manager store grant required");
+    }
+
+    /** Manager-signed server-side approval. No browser-provided approvedBy is trusted. */
+    public static Map<String, Object> approve(DispatchContext dc,
+            Map<String, Object> ctx, GenericValue manager) throws Exception {
+        Delegator d = dc.getDelegator();
+        String operation = required(ctx.get("operation"), "operation");
+        if (!"VOID".equals(operation) && !"RETURN".equals(operation)) {
+            throw new IllegalArgumentException("Invalid approval operation");
+        }
+        String saleKey = required(ctx.get("originalSaleKey"), "originalSaleKey");
+        GenericValue sale = EntityQuery.use(d).from("WanPosSaleRequest")
+                .where("idempotencyKey", saleKey).queryOne();
+        if (sale == null || !"COMPLETED".equals(sale.getString("statusId"))) {
+            throw new IllegalArgumentException("Completed sale required for approval");
+        }
+        String shiftId = required(ctx.get("shiftId"), "shiftId");
+        String terminalId = required(ctx.get("terminalId"), "terminalId");
+        String cashier = required(ctx.get("cashierUserLoginId"), "cashierUserLoginId");
+        GenericValue shift = openShift(d, shiftId);
+        if (!cashier.equals(shift.getString("cashierUserLoginId"))
+                || !terminalId.equals(shift.getString("terminalId"))
+                || !sale.getString("productStoreId").equals(shift.getString("productStoreId"))
+                || !sale.getString("facilityId").equals(shift.getString("facilityId"))) {
+            throw new IllegalArgumentException("Payout shift/operator/store mismatch");
+        }
+        String managerId = manager.getString("userLoginId");
+        if (cashier.equals(managerId)) {
+            throw new IllegalArgumentException("Refund approval must use a different manager");
+        }
+        managerGrant(d, managerId, shift.getString("productStoreId"),
+                shift.getString("facilityId"));
+        String reason = reason(ctx.get("reason"));
+        List<?> lines = ctx.get("items") instanceof List<?>
+                ? (List<?>) ctx.get("items") : null;
+        String sig = signature(operation, saleKey, shiftId, terminalId, reason, lines);
+        BigDecimal approvedAmount = money(ctx.get("approvedAmount"));
+        if (approvedAmount.signum() <= 0
+                || approvedAmount.compareTo(sale.getBigDecimal("totalAmount")) > 0) {
+            throw new IllegalArgumentException("Approved amount exceeds original sale");
+        }
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        // Stable approval ID is the request's idempotency key (one manager/operation).
+        // Multiple same-key attempts cannot create multiple approval records.
+        String approvalRequestKey = required(ctx.get("approvalRequestKey"), "approvalRequestKey");
+        String approvalId = "APR-" + (hash(managerId + ":" + approvalRequestKey)).substring(0, 40);
+        GenericValue previous = EntityQuery.use(d).from("WanPosRefundApproval")
+                .where("approvalId", approvalId).queryOne();
+        if (previous != null) {
+            if (!sig.equals(previous.getString("requestFingerprint"))
+                    || !managerId.equals(previous.getString("approvedByUserLoginId"))
+                    || !cashier.equals(previous.getString("cashierUserLoginId"))
+                    || approvedAmount.compareTo(previous.getBigDecimal("approvedAmount")) != 0
+                    || !"APPROVED".equals(previous.getString("statusId"))
+                    || previous.getTimestamp("expiresAt").before(new Timestamp(System.currentTimeMillis()))) {
+                throw new IllegalArgumentException("Approval request key was already used");
+            }
+            Map<String, Object> existingResult = ServiceUtil.returnSuccess();
+            existingResult.put("approvalId", previous.getString("approvalId"));
+            existingResult.put("expiresAt", previous.getTimestamp("expiresAt"));
+            existingResult.put("approvedAmount", previous.getBigDecimal("approvedAmount"));
+            return existingResult;
+        }
+        GenericValue row = d.makeValue("WanPosRefundApproval");
+        row.set("approvalId", approvalId);
+        row.set("originalSaleKey", saleKey);
+        row.set("operationCode", operation);
+        row.set("requestFingerprint", sig);
+        row.set("productStoreId", shift.getString("productStoreId"));
+        row.set("facilityId", shift.getString("facilityId"));
+        row.set("terminalId", terminalId);
+        row.set("shiftId", shiftId);
+        row.set("cashierUserLoginId", cashier);
+        row.set("approvedByUserLoginId", managerId);
+        row.set("approvedAmount", approvedAmount);
+        row.set("statusId", "APPROVED");
+        row.set("createdAt", now);
+        row.set("expiresAt", new Timestamp(now.getTime() + APPROVAL_LIFETIME_MS));
+        d.create(row);
+        Map<String, Object> result = ServiceUtil.returnSuccess();
+        result.put("approvalId", row.getString("approvalId"));
+        result.put("expiresAt", row.getTimestamp("expiresAt"));
+        result.put("approvedAmount", approvedAmount);
+        return result;
+    }
+
+    /** Atomic SQL conditional update prevents concurrent approval consumption. */
+    public static GenericValue approvedForExecution(DispatchContext dc,
+            Map<String, Object> ctx, GenericValue actor, GenericValue sale,
+            String operation, List<?> items) throws Exception {
+        Delegator d = dc.getDelegator();
+        String id = required(ctx.get("approvalId"), "approvalId");
+        GenericValue row = EntityQuery.use(d).from("WanPosRefundApproval")
+                .where("approvalId", id).queryOne();
+        if (row == null || !"APPROVED".equals(row.getString("statusId"))
+                || row.getTimestamp("expiresAt").before(new Timestamp(System.currentTimeMillis()))) {
+            throw new IllegalArgumentException("Refund approval missing, expired or already consumed");
+        }
+        if (!actor.getString("userLoginId").equals(row.getString("cashierUserLoginId"))
+                || !sale.getString("idempotencyKey").equals(row.getString("originalSaleKey"))
+                || !sale.getString("productStoreId").equals(row.getString("productStoreId"))
+                || !sale.getString("facilityId").equals(row.getString("facilityId"))
+                || !operation.equals(row.getString("operationCode"))) {
+            throw new IllegalArgumentException("Refund approval actor/operation/sale mismatch");
+        }
+        GenericValue shift = openShift(d, row.getString("shiftId"));
+        if (!row.getString("cashierUserLoginId").equals(shift.getString("cashierUserLoginId"))
+                || !row.getString("terminalId").equals(shift.getString("terminalId"))
+                || !row.getString("productStoreId").equals(shift.getString("productStoreId"))
+                || !row.getString("facilityId").equals(shift.getString("facilityId"))) {
+            throw new IllegalArgumentException("Approved payout drawer is no longer available");
+        }
+        String reason = reason(ctx.get("reason"));
+        String finger = signature(operation, sale.getString("idempotencyKey"),
+                shift.getString("shiftId"), shift.getString("terminalId"), reason, items);
+        if (!finger.equals(row.getString("requestFingerprint"))) {
+            throw new IllegalArgumentException("Refund payload does not match manager approval");
+        }
+        // Prevent closeShift from overtaking this payout after approval validation.
+        // The database row lock remains held until the financial transaction ends.
+        lockShift(d, shift.getString("shiftId"));
+        // A cashier cannot commit a cash payout unsupported by recorded drawer cash.
+        // A properly recorded transfer or paid-in must fund the drawer first.
+        if ("CASH".equals(sale.getString("tenderType"))
+                && expected(d, shift).compareTo(row.getBigDecimal("approvedAmount")) < 0) {
+            throw new IllegalArgumentException("Insufficient expected drawer cash for approved payout");
+        }
+        // Atomic compare-and-set. This SQL UPDATE obtains the database row lock;
+        // competing requests cannot both consume the same single-use approval.
+        int claimed = d.storeByCondition("WanPosRefundApproval", Map.of("statusId", "CLAIMED"),
+                org.apache.ofbiz.entity.condition.EntityCondition.makeCondition(
+                        Map.of("approvalId", id, "statusId", "APPROVED")));
+        if (claimed != 1) {
+            throw new IllegalArgumentException("Approval was already claimed");
+        }
+        row.set("statusId", "CLAIMED");
+        return row;
+    }
+
+    /**
+     * Native OFBiz refund services run as the approved manager, not the bridge
+     * account or the cashier. The POS audit still records the cashier as executor.
+     * Revalidate the manager permission and store grant at execution time.
+     */
+    public static GenericValue nativeApprover(DispatchContext dc,
+            GenericValue approval) throws Exception {
+        Delegator d = dc.getDelegator();
+        GenericValue manager = EntityQuery.use(d).from("UserLogin")
+                .where("userLoginId", approval.getString("approvedByUserLoginId")).queryOne();
+        if (manager == null || manager.getString("partyId") == null
+                || "N".equalsIgnoreCase(manager.getString("enabled"))) {
+            throw new IllegalArgumentException("Approving manager is no longer active");
+        }
+        if (!WanErpPosServices.approvedManagerRights(dc, manager)) {
+            throw new IllegalArgumentException("Approving manager no longer has refund permission");
+        }
+        managerGrant(d, manager.getString("userLoginId"),
+                approval.getString("productStoreId"), approval.getString("facilityId"));
+        return manager;
+    }
+
+    public static void consume(DispatchContext dc, GenericValue approval,
+            String returnRequestKey, BigDecimal actual) throws Exception {
+        if (actual.compareTo(approval.getBigDecimal("approvedAmount")) != 0) {
+            throw new IllegalArgumentException("Native credit does not equal manager-approved amount");
+        }
+        approval.set("statusId", "CONSUMED");
+        approval.set("consumedAt", new Timestamp(System.currentTimeMillis()));
+        approval.set("returnRequestKey", returnRequestKey);
+        approval.store();
+    }
+
+    private static void movement(Delegator d, String id, String shiftId, String type,
+            String reference, BigDecimal value, String actor, String approver, String reason)
+            throws Exception {
+        GenericValue shift = openShift(d, shiftId);
+        lockShift(d, shiftId);
+        GenericValue old = EntityQuery.use(d).from("WanPosCashMovement")
+                .where("movementId", id).queryOne();
+        if (old != null) {
+            throw new IllegalArgumentException("Duplicate cash event (idempotency conflict)");
+        }
+        GenericValue row = d.makeValue("WanPosCashMovement");
+        row.set("movementId", id);
+        row.set("eventAt", new Timestamp(System.currentTimeMillis()));
+        row.set("shiftId", shiftId);
+        row.set("terminalId", shift.getString("terminalId"));
+        row.set("productStoreId", shift.getString("productStoreId"));
+        row.set("movementType", type);
+        row.set("sourceReference", reference);
+        row.set("amount", money(value));
+        row.set("actorUserLoginId", actor);
+        row.set("approvedByUserLoginId", approver);
+        row.set("reason", reason);
+        d.create(row);
+    }
+
+    /** Cash receipt occurs once and survives a later sale status change to VOIDED. */
+    public static void sale(Delegator d, GenericValue s) throws Exception {
+        if ("CASH".equals(s.getString("tenderType"))) {
+            movement(d, "S-" + hash(s.getString("idempotencyKey")),
+                    s.getString("shiftId"), "CASH_SALE", s.getString("idempotencyKey"),
+                    s.getBigDecimal("totalAmount"), s.getString("actorUserLoginId"), null,
+                    "Cash received less change");
+        }
+    }
+
+    /** Refund movement belongs to the shift that actually pays, not the approving manager. */
+    public static void refund(Delegator d, GenericValue ret, GenericValue approval) throws Exception {
+        if ("CASH".equals(ret.getString("refundTenderType"))) {
+            movement(d, "R-" + hash(ret.getString("returnRequestKey")),
+                    ret.getString("shiftId"), "CASH_REFUND",
+                    ret.getString("returnRequestKey"), ret.getBigDecimal("totalRefund"),
+                    ret.getString("actorUserLoginId"),
+                    approval.getString("approvedByUserLoginId"), "Manager-approved cash refund");
+        }
+    }
+
+    /** Preserve exact receipt/refund direction and immutability when closing a till. */
+    public static BigDecimal expected(Delegator d, GenericValue shift) throws Exception {
+        String id = shift.getString("shiftId");
+        for (GenericValue sale : EntityQuery.use(d).from("WanPosSaleRequest")
+                .where("shiftId", id, "tenderType", "CASH").queryList()) {
+            if (("COMPLETED".equals(sale.getString("statusId"))
+                    || "VOIDED".equals(sale.getString("statusId")))
+                    && EntityQuery.use(d).from("WanPosCashMovement")
+                    .where("movementId", "S-" + hash(sale.getString("idempotencyKey")))
+                    .queryOne() == null) {
+                throw new IllegalStateException("Legacy sale lacks immutable cash event; reconcile before close");
+            }
+        }
+        // v3.9.6-only: assert both new drawer movement types exist with the exact
+        // persisted amount. Legacy sale pathways remain untouched by this gate.
+        for (GenericValue newSale : EntityQuery.use(d).from("WanPosSaleRequest")
+                .where("shiftId", id).queryList()) {
+            if (!("COMPLETED".equals(newSale.getString("statusId"))
+                    || "VOIDED".equals(newSale.getString("statusId")))) {
+                continue;
+            }
+            String newKey = newSale.getString("idempotencyKey");
+            List<GenericValue> tenderParts = EntityQuery.use(d).from("WanPosV396SaleTender")
+                    .where("idempotencyKey", newKey).queryList();
+            for (GenericValue tenderPart : tenderParts) {
+                if (!"CASH".equals(tenderPart.getString("tenderType"))) continue;
+                GenericValue event = EntityQuery.use(d).from("WanPosCashMovement")
+                        .where("movementId", "S-" + hash(newKey)).queryOne();
+                if (event == null || !"CASH_SALE".equals(event.getString("movementType"))
+                        || !newKey.equals(event.getString("sourceReference"))
+                        || tenderPart.getBigDecimal("amount") == null
+                        || event.getBigDecimal("amount") == null
+                        || event.getBigDecimal("amount").compareTo(tenderPart.getBigDecimal("amount")) != 0) {
+                    throw new IllegalStateException("v3.9.6 mixed sale cash event missing/mismatched");
+                }
+            }
+            GenericValue payout = EntityQuery.use(d).from("WanPosV396Cashout")
+                    .where("idempotencyKey", newKey).queryOne();
+            if (payout != null) {
+                GenericValue event = EntityQuery.use(d).from("WanPosCashMovement")
+                        .where("movementId", "O-" + hash(newKey)).queryOne();
+                if (!"COMPLETED".equals(payout.getString("statusId"))
+                        || payout.getBigDecimal("cashOutAmount") == null
+                        || event == null || !"EFTPOS_CASH_OUT".equals(event.getString("movementType"))
+                        || !newKey.equals(event.getString("sourceReference"))
+                        || event.getBigDecimal("amount") == null
+                        || event.getBigDecimal("amount").compareTo(payout.getBigDecimal("cashOutAmount")) != 0) {
+                    throw new IllegalStateException("v3.9.6 cash-out payout event missing/mismatched");
+                }
+            }
+        }
+        for (GenericValue refund : EntityQuery.use(d).from("WanPosReturnRequest")
+                .where("shiftId", id, "statusId", "COMPLETED").queryList()) {
+            if ("EFTPOS".equals(refund.getString("refundTenderType"))) {
+                continue;
+            }
+            if ("V396".equals(refund.getString("refundTenderType"))) {
+                // v3.9.6 split returns can include card-only refunds (no drawer movement).
+                // Their refund components are persisted in WanPosV396ReturnTender.
+                List<GenericValue> parts = EntityQuery.use(d).from("WanPosV396ReturnTender")
+                        .where("returnRequestKey", refund.getString("returnRequestKey")).queryList();
+                if (parts.isEmpty()) throw new IllegalStateException("Missing v3.9.6 refund allocations");
+                boolean cashPart = false;
+                for (GenericValue p : parts) {
+                    if ("CASH".equals(p.getString("tenderType"))
+                            && p.getBigDecimal("amount").signum() > 0) {
+                        cashPart = true;
+                    }
+                }
+                if (!cashPart) continue;
+            }
+            if (EntityQuery.use(d).from("WanPosCashMovement")
+                    .where("movementId", "R-" + hash(refund.getString("returnRequestKey")))
+                    .queryOne() == null) {
+                throw new IllegalStateException("Legacy refund requires cash movement reconciliation");
+            }
+        }
+        BigDecimal total = money(shift.getBigDecimal("openingFloat"));
+        for (GenericValue row : EntityQuery.use(d).from("WanPosCashMovement")
+                .where("shiftId", id).queryList()) {
+            BigDecimal value = money(row.getBigDecimal("amount"));
+            switch (row.getString("movementType")) {
+            case "CASH_SALE":
+            case "TRANSFER_IN":
+            case "PAID_IN":
+                total = total.add(value);
+                break;
+            case "CASH_REFUND":
+            case "EFTPOS_CASH_OUT":
+            case "TRANSFER_OUT":
+            case "CASH_DROP":
+                total = total.subtract(value);
+                break;
+            default:
+                throw new IllegalStateException("Unknown cash movement type");
+            }
+        }
+        return total;
+    }
+
+    /** Drawer-paid-in or cash-drop; does not silently create a GL bank deposit. */
+    public static Map<String, Object> cashAdjustment(DispatchContext dc,
+            Map<String, Object> ctx, GenericValue manager) throws Exception {
+        Delegator d = dc.getDelegator();
+        String shiftId = required(ctx.get("shiftId"), "shiftId");
+        GenericValue shift = openShift(d, shiftId);
+        managerGrant(d, manager.getString("userLoginId"),
+                shift.getString("productStoreId"), shift.getString("facilityId"));
+        String type = required(ctx.get("movementType"), "movementType");
+        if (!"CASH_DROP".equals(type) && !"PAID_IN".equals(type)) {
+            throw new IllegalArgumentException("Unsupported drawer adjustment type");
+        }
+        if (!Boolean.TRUE.equals(ctx.get("confirmedPhysicalMovement"))) {
+            throw new IllegalArgumentException("Confirm actual physical drawer cash movement");
+        }
+        String ref = required(ctx.get("movementReference"), "movementReference");
+        String reason = reason(ctx.get("reason"));
+        lockShift(d, shiftId);
+        BigDecimal value = money(ctx.get("amount"));
+        if (value.signum() <= 0 || ("CASH_DROP".equals(type)
+                && expected(d, shift).compareTo(value) < 0)) {
+            throw new IllegalArgumentException("Invalid drawer adjustment amount");
+        }
+        movement(d, "A-" + hash(shiftId + ':' + type + ':' + ref),
+                shiftId, type, ref, value, manager.getString("userLoginId"),
+                manager.getString("userLoginId"), reason);
+        Map<String, Object> out = ServiceUtil.returnSuccess();
+        out.put("movementReference", ref);
+        out.put("amount", value);
+        return out;
+    }
+
+    /** Same-store transfer: two balanced, unique cash events in one OFBiz transaction. */
+    public static Map<String, Object> transfer(DispatchContext dc,
+            Map<String, Object> ctx, GenericValue manager) throws Exception {
+        Delegator d = dc.getDelegator();
+        String source = required(ctx.get("sourceShiftId"), "sourceShiftId");
+        String dest = required(ctx.get("destinationShiftId"), "destinationShiftId");
+        String ref = required(ctx.get("transferId"), "transferId");
+        if (source.equals(dest) || !Boolean.TRUE.equals(ctx.get("confirmedPhysicalTransfer"))) {
+            throw new IllegalArgumentException("Different shifts and physical transfer confirmation required");
+        }
+        GenericValue a = openShift(d, source);
+        GenericValue b = openShift(d, dest);
+        if (!a.getString("productStoreId").equals(b.getString("productStoreId"))
+                || !a.getString("facilityId").equals(b.getString("facilityId"))) {
+            throw new IllegalArgumentException("Transfer must remain within one store/facility");
+        }
+        managerGrant(d, manager.getString("userLoginId"),
+                a.getString("productStoreId"), a.getString("facilityId"));
+        // Deterministic lock order avoids deadlocks with another transfer.
+        if (source.compareTo(dest) < 0) {
+            lockShift(d, source);
+            lockShift(d, dest);
+        } else {
+            lockShift(d, dest);
+            lockShift(d, source);
+        }
+        BigDecimal value = money(ctx.get("amount"));
+        if (value.signum() <= 0 || expected(d, a).compareTo(value) < 0) {
+            throw new IllegalArgumentException("Insufficient recorded cash for transfer");
+        }
+        String reason = reason(ctx.get("reason"));
+        String sourceRef = "T-" + hash(ref);
+        movement(d, sourceRef + "-O", source, "TRANSFER_OUT", ref,
+                value, manager.getString("userLoginId"), manager.getString("userLoginId"), reason);
+        movement(d, sourceRef + "-I", dest, "TRANSFER_IN", ref,
+                value, manager.getString("userLoginId"), manager.getString("userLoginId"), reason);
+        Map<String, Object> result = ServiceUtil.returnSuccess();
+        result.put("transferId", ref);
+        result.put("amount", value);
+        return result;
+    }
+}

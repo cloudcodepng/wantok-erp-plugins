@@ -22,6 +22,8 @@ public final class ProductInventoryImportServices {
     private static final Pattern SKU = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]{0,59}");
     private static final Pattern SUPPLIER = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]{0,19}");
     private static final int MAX_IMAGE_BYTES = 512 * 1024;
+    private static final String SHONG_TENANT = "SHONG";
+    private static final String SHONG_GST_CATEGORY = "SHONG_GST_STD";
 
     // Import is intentionally restricted to non-serialized opening stock and explicit receipts.
     private static final String OPENING_IF_EMPTY = "OPENING_IF_EMPTY";
@@ -126,11 +128,15 @@ public final class ProductInventoryImportServices {
             check(tenantId.matches("[A-Za-z0-9_-]{1,40}"), "Invalid tenantId");
             check(d.getDelegatorName().endsWith("#" + tenantId),
                     "Tenant identity does not match the OFBiz delegator");
+            boolean shongImport = SHONG_TENANT.equals(tenantId);
             String ownerPartyId = string(p, "companyPartyId");
             String facilityId = string(p, "facilityId");
             String currencyId = string(p, "currencyUomId");
             check(!ownerPartyId.isBlank() && !facilityId.isBlank() && !currencyId.isBlank(),
                     "Tenant companyPartyId, facilityId and currencyUomId are required");
+            if (shongImport) {
+                check(SHONG_TENANT.equals(ownerPartyId), "SHONG import requires SHONG company Party");
+            }
             check(ctx.getSecurity().hasEntityPermission("CATALOG", "_CREATE", user), "CATALOG_CREATE required");
             check(ctx.getSecurity().hasEntityPermission("CATALOG", "_UPDATE", user), "CATALOG_UPDATE required");
             String id = string(p, "productId");
@@ -203,6 +209,10 @@ public final class ProductInventoryImportServices {
                 GenericValue categoryRec = find(d, "ProductCategory", "productCategoryId", category);
                 check(categoryRec != null && "CATALOG_CATEGORY".equals(categoryRec.getString("productCategoryTypeId")),
                         "Merchandise catalog category not found");
+            }
+            if (shongImport) {
+                check(find(d, "ProductCategory", "productCategoryId", SHONG_GST_CATEGORY) != null,
+                        "SHONG standard GST category is missing: " + SHONG_GST_CATEGORY);
             }
             check(find(d, "Uom", "uomId", uom) != null, "Unknown sell UOM");
             check(find(d, "Uom", "uomId", currencyId) != null, "Unknown tenant currency UOM");
@@ -292,8 +302,11 @@ public final class ProductInventoryImportServices {
                     "userLogin", user);
             if (existing == null) {
                 productArgs.putAll(attrs("productTypeId", "FINISHED_GOOD",
-                        "requireInventory", "Y", "chargeShipping", "N", "taxable", "N",
-                        "isVirtual", "N", "isVariant", "N"));
+                        "requireInventory", "Y", "chargeShipping", "N",
+                        "taxable", shongImport ? "Y" : "N", "isVirtual", "N", "isVariant", "N"));
+            } else if (shongImport) {
+                // Only the SHONG importer is authorized to set existing products as taxable.
+                productArgs.put("taxable", "Y");
             }
             call(dispatcher, existing == null ? "createProduct" : "updateProduct", productArgs);
             ensureIdentifier(d, dispatcher, user, id, "SKU", sku);
@@ -304,6 +317,26 @@ public final class ProductInventoryImportServices {
                     .where("productId", id, "productCategoryId", category).queryFirst() == null) {
                 call(dispatcher, "addProductToCategory", attrs("productId", id, "productCategoryId", category,
                         "fromDate", Timestamp.from(Instant.now()), "userLogin", user));
+            }
+            if (shongImport) {
+                // GST is an additional category, not a replacement for the workbook's merchandise category.
+                // Only active memberships count: an expired GST membership must be renewed on import.
+                Timestamp now = Timestamp.from(Instant.now());
+                boolean activeGstMembership = false;
+                for (GenericValue membership : EntityQuery.use(d).from("ProductCategoryMember")
+                        .where("productId", id, "productCategoryId", SHONG_GST_CATEGORY).queryList()) {
+                    Timestamp fromDate = membership.getTimestamp("fromDate");
+                    Timestamp thruDate = membership.getTimestamp("thruDate");
+                    if (fromDate != null && !fromDate.after(now)
+                            && (thruDate == null || thruDate.after(now))) {
+                        activeGstMembership = true;
+                        break;
+                    }
+                }
+                if (!activeGstMembership) {
+                    call(dispatcher, "addProductToCategory", attrs("productId", id,
+                            "productCategoryId", SHONG_GST_CATEGORY, "fromDate", now, "userLogin", user));
+                }
             }
             if (!supplier.isBlank()) {
                 // Native createSupplierProduct requires lastPrice. Entity write accepts nullable
@@ -346,7 +379,8 @@ public final class ProductInventoryImportServices {
             out.put("unitCostApplied", unitCost != null && !supplier.isBlank());
             if ("READY_TO_POST".equals(stockOutcome)) {
                 String itemId = postInventory(dispatcher, d, user, id, facilityId,
-                        ownerPartyId, currencyId, openingQty, unitCost, inventoryBatchId);
+                        ownerPartyId, currencyId, openingQty, unitCost, inventoryBatchId,
+                        OPENING_IF_EMPTY.equals(inventoryMode));
                 out.put("inventoryItemId", itemId);
                 out.put("inventoryOutcome", "POSTED");
                 out.put("inventoryPostedQty", openingQty);
@@ -408,7 +442,7 @@ public final class ProductInventoryImportServices {
 
     private static String postInventory(LocalDispatcher dispatcher, Delegator d, GenericValue user,
             String productId, String facilityId, String ownerPartyId,
-            String currencyId, BigDecimal qty, BigDecimal unitCost, String batchId) throws Exception {
+            String currencyId, BigDecimal qty, BigDecimal unitCost, String batchId, boolean opening) throws Exception {
         Timestamp now = Timestamp.from(Instant.now());
         // Create a separate non-serialized inventory item for each authorized opening/receipt.
         // Never update QOH/ATP fields directly: createInventoryItemDetail is the stock ledger.
@@ -422,6 +456,11 @@ public final class ProductInventoryImportServices {
         // OFBiz quantity/ATP totals are maintained via InventoryItemDetail and entity ECA.
         call(dispatcher, "createInventoryItemDetail", attrs("inventoryItemId", itemId,
                 "quantityOnHandDiff", qty, "availableToPromiseDiff", qty, "userLogin", user));
+        if (opening) {
+            call(dispatcher, "createInventoryItemAttribute", attrs(
+                    "inventoryItemId", itemId, "attrName", "WPI_OPENING_QTY",
+                    "attrValue", qty.toPlainString(), "userLogin", user));
+        }
         if (!batchId.isBlank()) {
             call(dispatcher, "createInventoryItemAttribute", attrs(
                     "inventoryItemId", itemId, "attrName", "WPI_IMPORT_BATCH",
