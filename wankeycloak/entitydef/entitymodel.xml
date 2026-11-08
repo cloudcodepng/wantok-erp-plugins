@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entitymodel xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="https://ofbiz.apache.org/dtds/entitymodel.xsd">
+
+    <title>Wantok Keycloak Integration Entities</title>
+    <description>Tenant-aware Keycloak/OIDC mapping entities for Wantok ERP.</description>
+    <version>1.0</version>
+
+    <entity entity-name="WanKeycloakTenantConfig" package-name="org.apache.ofbiz.wankeycloak" title="Wantok Keycloak Tenant Config">
+        <field name="tenantId" type="id"/>
+        <field name="realmName" type="id-long"/>
+        <field name="organizationAlias" type="id-long"/>
+        <field name="issuerUrl" type="url"/>
+        <field name="authServerUrl" type="url"/>
+        <field name="clientId" type="id-long"/>
+        <field name="clientSecretAlias" type="long-varchar"/>
+        <field name="redirectUri" type="url"/>
+        <field name="postLoginPath" type="url"/>
+        <field name="postLogoutUri" type="url"/>
+        <field name="defaultOrgPartyId" type="id"/>
+        <field name="enabled" type="indicator"/>
+        <prim-key field="tenantId"/>
+    </entity>
+
+    <entity entity-name="WanKeycloakRoleMap" package-name="org.apache.ofbiz.wankeycloak" title="Wantok Keycloak Role Map">
+        <field name="tenantId" type="id"/>
+        <field name="keycloakRole" type="id-long"/>
+        <field name="securityGroupId" type="id"/>
+        <field name="description" type="description"/>
+        <field name="enabled" type="indicator"/>
+        <prim-key field="tenantId"/>
+        <prim-key field="keycloakRole"/>
+    </entity>
+
+    <entity entity-name="WanKeycloakUserMap" package-name="org.apache.ofbiz.wankeycloak" title="Wantok Keycloak User Map">
+        <field name="tenantId" type="id"/>
+        <field name="keycloakSubject" type="long-varchar"/>
+        <field name="userLoginId" type="id-vlong"/>
+        <field name="partyId" type="id"/>
+        <field name="preferredUsername" type="long-varchar"/>
+        <field name="emailAddress" type="email"/>
+        <field name="lastLoginStamp" type="date-time"/>
+        <field name="enabled" type="indicator"/>
+        <prim-key field="tenantId"/>
+        <prim-key field="keycloakSubject"/>
+    </entity>
+
+    <entity entity-name="WanKeycloakSessionAudit" package-name="org.apache.ofbiz.wankeycloak" title="Wantok Keycloak Session Audit">
+        <field name="auditId" type="id"/>
+        <field name="tenantId" type="id"/>
+        <field name="userLoginId" type="id-vlong"/>
+        <field name="keycloakSubject" type="long-varchar"/>
+        <field name="eventType" type="short-varchar"/>
+        <field name="issuerUrl" type="url"/>
+        <field name="clientId" type="id-long"/>
+        <field name="remoteAddr" type="long-varchar"/>
+        <field name="userAgent" type="very-long"/>
+        <field name="eventStamp" type="date-time"/>
+        <field name="statusId" type="id"/>
+        <field name="auditMessage" type="very-long"/>
+        <prim-key field="auditId"/>
+    </entity>
+</entitymodel>

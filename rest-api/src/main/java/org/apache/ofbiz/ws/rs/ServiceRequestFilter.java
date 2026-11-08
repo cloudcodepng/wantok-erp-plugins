@@ -37,6 +37,7 @@ import javax.ws.rs.ext.Provider;
 import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.service.GenericServiceException;
+import org.apache.ofbiz.service.LocalDispatcher;
 import org.apache.ofbiz.service.ModelService;
 import org.apache.ofbiz.webapp.WebAppUtil;
 import org.apache.ofbiz.ws.rs.annotation.ServiceRequestValidator;
@@ -76,7 +77,11 @@ public class ServiceRequestFilter implements ContainerRequestFilter {
         if (UtilValidate.isNotEmpty(service)) {
             ModelService mdService = null;
             try {
-                mdService = WebAppUtil.getDispatcher(servletContext).getDispatchContext().getModelService(service);
+                LocalDispatcher dispatcher = (LocalDispatcher) httpRequest.getAttribute("dispatcher");
+                if (dispatcher == null) {
+                    dispatcher = WebAppUtil.getDispatcher(servletContext);
+                }
+                mdService = dispatcher.getDispatchContext().getModelService(service);
             } catch (GenericServiceException e) {
                 Debug.logError(e.getMessage(), MODULE);
             }

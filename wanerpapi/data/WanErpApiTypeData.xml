@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-engine-xml>
+    <PartyIdentificationType
+            partyIdentificationTypeId="KEYCLOAK_SUB"
+            description="Keycloak Subject Identifier"/>
+    <PartyIdentificationType
+            partyIdentificationTypeId="WANERP_REG_IDEMP"
+            description="WanERP Registration Idempotency Key"/>
+</entity-engine-xml>

@@ -1,0 +1,15 @@
+// Apache OFBiz 24.09 plugin dependency declaration.
+//
+// IMPORTANT:
+// Do NOT apply the Gradle 'java' plugin here. OFBiz compiles Java sources from
+// all active components (including plugins/wankeycloak/src/main/java) as part
+// of the root :compileJava task. Applying 'java' creates a second independent
+// :plugins:wankeycloak:compileJava task whose classpath does not contain the
+// OFBiz framework/application classes.
+//
+// pluginLibsCompile is the OFBiz-provided configuration for libraries that
+// must be visible to the root OFBiz compile/runtime classpath.
+
+dependencies {
+    pluginLibsCompile 'com.nimbusds:nimbus-jose-jwt:9.41.2'
+}

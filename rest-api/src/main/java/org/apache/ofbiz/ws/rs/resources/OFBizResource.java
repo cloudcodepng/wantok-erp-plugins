@@ -19,11 +19,13 @@
 package org.apache.ofbiz.ws.rs.resources;
 
 import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.ext.Provider;
 
 import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.service.LocalDispatcher;
+import org.apache.ofbiz.webapp.WebAppUtil;
 
 /**
  *
@@ -31,11 +33,31 @@ import org.apache.ofbiz.service.LocalDispatcher;
 @Provider
 public abstract class OFBizResource implements IOFBizResource {
 
+    // ALLOW PUBLIC FIELDS
+    // Preserve JAX-RS field injection and the protected subclass contract.
     @Context
-    private ServletContext servletContext;
+    protected ServletContext servletContext;
 
-    private Delegator delegator = getDelegator();
+    @Context
+    protected HttpServletRequest httpRequest;
+    // FORBID PUBLIC FIELDS
 
-    private LocalDispatcher dispatcher = getDispatcher();
+    @Override
+    public Delegator getDelegator() {
+        Delegator delegator = httpRequest != null ? (Delegator) httpRequest.getAttribute("delegator") : null;
+        if (delegator == null) {
+            delegator = WebAppUtil.getDelegator(servletContext);
+        }
+        return delegator;
+    }
+
+    @Override
+    public LocalDispatcher getDispatcher() {
+        LocalDispatcher dispatcher = httpRequest != null ? (LocalDispatcher) httpRequest.getAttribute("dispatcher") : null;
+        if (dispatcher == null) {
+            dispatcher = WebAppUtil.getDispatcher(servletContext);
+        }
+        return dispatcher;
+    }
 
 }

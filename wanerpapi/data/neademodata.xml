@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-engine-xml>
+    <!-- ================================================================ -->
+    <!-- WANTOK ERP / NEA DEMO DATA - CLOUDCODE TENANT                    -->
+    <!-- Load with reader ext-demo AFTER seed,seed-initial.               -->
+    <!-- This file contains business/demo data, not tenant routing config. -->
+    <!-- ================================================================ -->
+
+    <!-- 1. NEA parent organization -->
+    <Party partyId="NEA" partyTypeId="PARTY_GROUP" statusId="PARTY_ENABLED" preferredCurrencyUomId="PGK" createdDate="2026-01-01 00:00:00.000"/>
+    <PartyGroup partyId="NEA" groupName="National Energy Authority" groupNameLocal="National Energy Authority"/>
+    <PartyRole partyId="NEA" roleTypeId="_NA_"/>
+    <PartyRole partyId="NEA" roleTypeId="INTERNAL_ORGANIZATIO"/>
+
+    <!-- NEA contact/address for demo documents -->
+    <ContactMech contactMechId="NEA_EMAIL" contactMechTypeId="EMAIL_ADDRESS" infoString="nea-demo@example.invalid"/>
+    <PartyContactMech partyId="NEA" contactMechId="NEA_EMAIL" fromDate="2026-01-01 00:00:00.000" allowSolicitation="Y"/>
+    <PartyContactMechPurpose partyId="NEA" contactMechId="NEA_EMAIL" contactMechPurposeTypeId="PRIMARY_EMAIL" fromDate="2026-01-01 00:00:00.000"/>
+    <ContactMech contactMechId="NEA_ADDR_HQ" contactMechTypeId="POSTAL_ADDRESS"/>
+    <PostalAddress contactMechId="NEA_ADDR_HQ" toName="National Energy Authority" address1="NEA Headquarters" city="Port Moresby" postalCode="121" countryGeoId="PNG"/>
+    <PartyContactMech partyId="NEA" contactMechId="NEA_ADDR_HQ" fromDate="2026-01-01 00:00:00.000" allowSolicitation="Y"/>
+    <PartyContactMechPurpose partyId="NEA" contactMechId="NEA_ADDR_HQ" contactMechPurposeTypeId="GENERAL_LOCATION" fromDate="2026-01-01 00:00:00.000"/>
+    <PartyContactMechPurpose partyId="NEA" contactMechId="NEA_ADDR_HQ" contactMechPurposeTypeId="BILLING_LOCATION" fromDate="2026-01-01 00:00:00.000"/>
+
+    <!-- 2. NEA cost centres represented using OFBiz internal sub-organizations -->
+    <Party partyId="NEA_CC_EXEC" partyTypeId="PARTY_GROUP" statusId="PARTY_ENABLED" preferredCurrencyUomId="PGK"/>
+    <PartyGroup partyId="NEA_CC_EXEC" groupName="NEA Executive &amp; Corporate Services Cost Centre"/>
+    <PartyRole partyId="NEA_CC_EXEC" roleTypeId="_NA_"/><PartyRole partyId="NEA_CC_EXEC" roleTypeId="INTERNAL_ORGANIZATIO"/>
+    <PartyRelationship partyIdFrom="NEA" partyIdTo="NEA_CC_EXEC" roleTypeIdFrom="_NA_" roleTypeIdTo="_NA_" partyRelationshipTypeId="GROUP_ROLLUP" fromDate="2026-01-01 00:00:00.000"/>
+
+    <Party partyId="NEA_CC_FIN" partyTypeId="PARTY_GROUP" statusId="PARTY_ENABLED" preferredCurrencyUomId="PGK"/>
+    <PartyGroup partyId="NEA_CC_FIN" groupName="NEA Finance &amp; Accounts Cost Centre"/>
+    <PartyRole partyId="NEA_CC_FIN" roleTypeId="_NA_"/><PartyRole partyId="NEA_CC_FIN" roleTypeId="INTERNAL_ORGANIZATIO"/>
+    <PartyRelationship partyIdFrom="NEA" partyIdTo="NEA_CC_FIN" roleTypeIdFrom="_NA_" roleTypeIdTo="_NA_" partyRelationshipTypeId="GROUP_ROLLUP" fromDate="2026-01-01 00:00:00.000"/>
+
+    <Party partyId="NEA_CC_LIC" partyTypeId="PARTY_GROUP" statusId="PARTY_ENABLED" preferredCurrencyUomId="PGK"/>
+    <PartyGroup partyId="NEA_CC_LIC" groupName="NEA Licensing &amp; Registration Cost Centre"/>
+    <PartyRole partyId="NEA_CC_LIC" roleTypeId="_NA_"/><PartyRole partyId="NEA_CC_LIC" roleTypeId="INTERNAL_ORGANIZATIO"/>
+    <PartyRelationship partyIdFrom="NEA" partyIdTo="NEA_CC_LIC" roleTypeIdFrom="_NA_" roleTypeIdTo="_NA_" partyRelationshipTypeId="GROUP_ROLLUP" fromDate="2026-01-01 00:00:00.000"/>
+
+    <Party partyId="NEA_CC_INSP" partyTypeId="PARTY_GROUP" statusId="PARTY_ENABLED" preferredCurrencyUomId="PGK"/>
+    <PartyGroup partyId="NEA_CC_INSP" groupName="NEA Inspections &amp; Compliance Cost Centre"/>
+    <PartyRole partyId="NEA_CC_INSP" roleTypeId="_NA_"/><PartyRole partyId="NEA_CC_INSP" roleTypeId="INTERNAL_ORGANIZATIO"/>
+    <PartyRelationship partyIdFrom="NEA" partyIdTo="NEA_CC_INSP" roleTypeIdFrom="_NA_" roleTypeIdTo="_NA_" partyRelationshipTypeId="GROUP_ROLLUP" fromDate="2026-01-01 00:00:00.000"/>
+
+    <Party partyId="NEA_CC_CUST" partyTypeId="PARTY_GROUP" statusId="PARTY_ENABLED" preferredCurrencyUomId="PGK"/>
+    <PartyGroup partyId="NEA_CC_CUST" groupName="NEA Customer Service &amp; Revenue Collection Cost Centre"/>
+    <PartyRole partyId="NEA_CC_CUST" roleTypeId="_NA_"/><PartyRole partyId="NEA_CC_CUST" roleTypeId="INTERNAL_ORGANIZATIO"/>
+    <PartyRelationship partyIdFrom="NEA" partyIdTo="NEA_CC_CUST" roleTypeIdFrom="_NA_" roleTypeIdTo="_NA_" partyRelationshipTypeId="GROUP_ROLLUP" fromDate="2026-01-01 00:00:00.000"/>
+
+    <!-- 3. Demo employees. Names are fictional test data. -->
+    <Party partyId="NEA_EMP_001" partyTypeId="PERSON" statusId="PARTY_ENABLED"/><Person partyId="NEA_EMP_001" firstName="Grace" lastName="Kila" positionTitle="Chief Executive Officer"/><PartyRole partyId="NEA_EMP_001" roleTypeId="EMPLOYEE"/><Employment roleTypeIdFrom="INTERNAL_ORGANIZATIO" roleTypeIdTo="EMPLOYEE" partyIdFrom="NEA" partyIdTo="NEA_EMP_001" fromDate="2025-01-01 00:00:00.000"/>
+    <Party partyId="NEA_EMP_002" partyTypeId="PERSON" statusId="PARTY_ENABLED"/><Person partyId="NEA_EMP_002" firstName="Daniel" lastName="Mako" positionTitle="Finance Manager"/><PartyRole partyId="NEA_EMP_002" roleTypeId="EMPLOYEE"/><Employment roleTypeIdFrom="INTERNAL_ORGANIZATIO" roleTypeIdTo="EMPLOYEE" partyIdFrom="NEA" partyIdTo="NEA_EMP_002" fromDate="2025-01-01 00:00:00.000"/>
+    <Party partyId="NEA_EMP_003" partyTypeId="PERSON" statusId="PARTY_ENABLED"/><Person partyId="NEA_EMP_003" firstName="Ruth" lastName="Bani" positionTitle="Licensing Manager"/><PartyRole partyId="NEA_EMP_003" roleTypeId="EMPLOYEE"/><Employment roleTypeIdFrom="INTERNAL_ORGANIZATIO" roleTypeIdTo="EMPLOYEE" partyIdFrom="NEA" partyIdTo="NEA_EMP_003" fromDate="2025-01-01 00:00:00.000"/>
+    <Party partyId="NEA_EMP_004" partyTypeId="PERSON" statusId="PARTY_ENABLED"/><Person partyId="NEA_EMP_004" firstName="Peter" lastName="Tanu" positionTitle="Senior Electrical Inspector"/><PartyRole partyId="NEA_EMP_004" roleTypeId="EMPLOYEE"/><Employment roleTypeIdFrom="INTERNAL_ORGANIZATIO" roleTypeIdTo="EMPLOYEE" partyIdFrom="NEA" partyIdTo="NEA_EMP_004" fromDate="2025-01-01 00:00:00.000"/>
+    <Party partyId="NEA_EMP_005" partyTypeId="PERSON" statusId="PARTY_ENABLED"/><Person partyId="NEA_EMP_005" firstName="Mary" lastName="Kora" positionTitle="Customer Service Officer"/><PartyRole partyId="NEA_EMP_005" roleTypeId="EMPLOYEE"/><Employment roleTypeIdFrom="INTERNAL_ORGANIZATIO" roleTypeIdTo="EMPLOYEE" partyIdFrom="NEA" partyIdTo="NEA_EMP_005" fromDate="2025-01-01 00:00:00.000"/>
+    <Party partyId="NEA_EMP_006" partyTypeId="PERSON" statusId="PARTY_ENABLED"/><Person partyId="NEA_EMP_006" firstName="John" lastName="Walo" positionTitle="POS Cashier"/><PartyRole partyId="NEA_EMP_006" roleTypeId="EMPLOYEE"/><Employment roleTypeIdFrom="INTERNAL_ORGANIZATIO" roleTypeIdTo="EMPLOYEE" partyIdFrom="NEA" partyIdTo="NEA_EMP_006" fromDate="2025-01-01 00:00:00.000"/>
+
+    <!-- 4. Facility and two ProductStores (online + POS) -->
+    <Facility facilityId="NEA_HQ_WAREHOUSE" facilityTypeId="WAREHOUSE" facilityName="NEA Headquarters Warehouse" ownerPartyId="NEA" openedDate="2026-01-01 00:00:00.000" defaultInventoryItemTypeId="NON_SERIAL_INV_ITEM"/>
+
+    <ProductStore productStoreId="NEA_ONLINE_STORE" storeName="NEA Online Services Store" payToPartyId="NEA" defaultCurrencyUomId="PGK" inventoryFacilityId="NEA_HQ_WAREHOUSE" oneInventoryFacility="Y" checkInventory="Y" reserveInventory="Y" balanceResOnOrderCreation="Y" reserveOrderEnumId="INVRO_FIFO_REC"/>
+    <ProductStoreFacility productStoreId="NEA_ONLINE_STORE" facilityId="NEA_HQ_WAREHOUSE" fromDate="2026-01-01 00:00:00.000" sequenceNum="1"/>
+    <ProductStore productStoreId="NEA_POS_STORE" storeName="NEA POS / Counter Store" payToPartyId="NEA" defaultCurrencyUomId="PGK" inventoryFacilityId="NEA_HQ_WAREHOUSE" oneInventoryFacility="Y" checkInventory="Y" reserveInventory="Y" balanceResOnOrderCreation="Y" reserveOrderEnumId="INVRO_FIFO_REC"/>
+    <ProductStoreFacility productStoreId="NEA_POS_STORE" facilityId="NEA_HQ_WAREHOUSE" fromDate="2026-01-01 00:00:00.000" sequenceNum="1"/>
+
+    <!-- 5. Catalogs and categories -->
+    <ProdCatalog prodCatalogId="NEA_ONLINE_CATALOG" catalogName="NEA Online Services Catalog" useQuickAdd="Y"/>
+    <ProdCatalog prodCatalogId="NEA_POS_CATALOG" catalogName="NEA POS Services &amp; Products Catalog" useQuickAdd="Y"/>
+    <ProductStoreCatalog productStoreId="NEA_ONLINE_STORE" prodCatalogId="NEA_ONLINE_CATALOG" fromDate="2026-01-01 00:00:00.000" sequenceNum="1"/>
+    <ProductStoreCatalog productStoreId="NEA_POS_STORE" prodCatalogId="NEA_POS_CATALOG" fromDate="2026-01-01 00:00:00.000" sequenceNum="1"/>
+
+    <ProductCategory productCategoryId="NEA_CAT_ONLINE_ROOT" productCategoryTypeId="CATALOG_CATEGORY" categoryName="NEA Online Services" description="NEA online services root category"/>
+    <ProductCategory productCategoryId="NEA_CAT_POS_ROOT" productCategoryTypeId="CATALOG_CATEGORY" categoryName="NEA POS Services &amp; Products" description="NEA counter/POS root category"/>
+    <ProdCatalogCategory prodCatalogId="NEA_ONLINE_CATALOG" productCategoryId="NEA_CAT_ONLINE_ROOT" prodCatalogCategoryTypeId="PCCT_BROWSE_ROOT" fromDate="2026-01-01 00:00:00.000" sequenceNum="1"/>
+    <ProdCatalogCategory prodCatalogId="NEA_POS_CATALOG" productCategoryId="NEA_CAT_POS_ROOT" prodCatalogCategoryTypeId="PCCT_BROWSE_ROOT" fromDate="2026-01-01 00:00:00.000" sequenceNum="1"/>
+
+    <ProductCategory productCategoryId="NEA_CAT_LICENSE" productCategoryTypeId="CATALOG_CATEGORY" categoryName="Licences &amp; Renewals"/>
+    <ProductCategory productCategoryId="NEA_CAT_PERMITS" productCategoryTypeId="CATALOG_CATEGORY" categoryName="Permits &amp; Certificates"/>
+    <ProductCategory productCategoryId="NEA_CAT_INSPECT" productCategoryTypeId="CATALOG_CATEGORY" categoryName="Inspections &amp; Compliance"/>
+    <ProductCategory productCategoryId="NEA_CAT_REGISTER" productCategoryTypeId="CATALOG_CATEGORY" categoryName="Registrations"/>
+    <ProductCategory productCategoryId="NEA_CAT_EQUIP" productCategoryTypeId="CATALOG_CATEGORY" categoryName="Equipment &amp; Test Stock"/>
+
+    <ProductCategoryRollup parentProductCategoryId="NEA_CAT_ONLINE_ROOT" productCategoryId="NEA_CAT_LICENSE" fromDate="2026-01-01 00:00:00.000" sequenceNum="10"/>
+    <ProductCategoryRollup parentProductCategoryId="NEA_CAT_ONLINE_ROOT" productCategoryId="NEA_CAT_PERMITS" fromDate="2026-01-01 00:00:00.000" sequenceNum="20"/>
+    <ProductCategoryRollup parentProductCategoryId="NEA_CAT_ONLINE_ROOT" productCategoryId="NEA_CAT_INSPECT" fromDate="2026-01-01 00:00:00.000" sequenceNum="30"/>
+    <ProductCategoryRollup parentProductCategoryId="NEA_CAT_ONLINE_ROOT" productCategoryId="NEA_CAT_REGISTER" fromDate="2026-01-01 00:00:00.000" sequenceNum="40"/>
+    <ProductCategoryRollup parentProductCategoryId="NEA_CAT_ONLINE_ROOT" productCategoryId="NEA_CAT_EQUIP" fromDate="2026-01-01 00:00:00.000" sequenceNum="50"/>
+    <ProductCategoryRollup parentProductCategoryId="NEA_CAT_POS_ROOT" productCategoryId="NEA_CAT_LICENSE" fromDate="2026-01-01 00:00:00.000" sequenceNum="10"/>
+    <ProductCategoryRollup parentProductCategoryId="NEA_CAT_POS_ROOT" productCategoryId="NEA_CAT_PERMITS" fromDate="2026-01-01 00:00:00.000" sequenceNum="20"/>
+    <ProductCategoryRollup parentProductCategoryId="NEA_CAT_POS_ROOT" productCategoryId="NEA_CAT_INSPECT" fromDate="2026-01-01 00:00:00.000" sequenceNum="30"/>
+    <ProductCategoryRollup parentProductCategoryId="NEA_CAT_POS_ROOT" productCategoryId="NEA_CAT_REGISTER" fromDate="2026-01-01 00:00:00.000" sequenceNum="40"/>
+    <ProductCategoryRollup parentProductCategoryId="NEA_CAT_POS_ROOT" productCategoryId="NEA_CAT_EQUIP" fromDate="2026-01-01 00:00:00.000" sequenceNum="50"/>
+
+    <!-- 6. NEA products/services used by API tests -->
+    <Product productId="NEA-LIC-APPLICATION" productTypeId="SERVICE" primaryProductCategoryId="NEA_CAT_LICENSE" internalName="Electricity Industry Licence Application" productName="Electricity Industry Licence Application" description="NEA licence application fee - demo" requireInventory="N" taxable="N" chargeShipping="N" autoCreateKeywords="Y" isVirtual="N" isVariant="N"/>
+    <Product productId="NEA-LIC-RENEWAL" productTypeId="SERVICE" primaryProductCategoryId="NEA_CAT_LICENSE" internalName="Electricity Licence Renewal" productName="Electricity Licence Renewal" description="NEA licence renewal fee - demo" requireInventory="N" taxable="N" chargeShipping="N" autoCreateKeywords="Y" isVirtual="N" isVariant="N"/>
+    <Product productId="NEA-WIRING-PERMIT" productTypeId="SERVICE" primaryProductCategoryId="NEA_CAT_PERMITS" internalName="Electrical Wiring Permit" productName="Electrical Wiring Permit" description="NEA wiring permit service - demo" requireInventory="N" taxable="N" chargeShipping="N" autoCreateKeywords="Y" isVirtual="N" isVariant="N"/>
+    <Product productId="NEA-INSTALL-INSPECT" productTypeId="SERVICE" primaryProductCategoryId="NEA_CAT_INSPECT" internalName="Electrical Installation Inspection" productName="Electrical Installation Inspection" description="NEA installation inspection service - demo" requireInventory="N" taxable="N" chargeShipping="N" autoCreateKeywords="Y" isVirtual="N" isVariant="N"/>
+    <Product productId="NEA-SAFETY-CERT" productTypeId="SERVICE" primaryProductCategoryId="NEA_CAT_PERMITS" internalName="Electrical Safety Certificate" productName="Electrical Safety Certificate" description="NEA electrical safety certificate - demo" requireInventory="N" taxable="N" chargeShipping="N" autoCreateKeywords="Y" isVirtual="N" isVariant="N"/>
+    <Product productId="NEA-CONTRACTOR-REG" productTypeId="SERVICE" primaryProductCategoryId="NEA_CAT_REGISTER" internalName="Electrical Contractor Registration" productName="Electrical Contractor Registration" description="NEA contractor registration - demo" requireInventory="N" taxable="N" chargeShipping="N" autoCreateKeywords="Y" isVirtual="N" isVariant="N"/>
+    <Product productId="NEA-ELECTRICIAN-REG" productTypeId="SERVICE" primaryProductCategoryId="NEA_CAT_REGISTER" internalName="Electrician Registration" productName="Electrician Registration" description="NEA electrician registration - demo" requireInventory="N" taxable="N" chargeShipping="N" autoCreateKeywords="Y" isVirtual="N" isVariant="N"/>
+    <Product productId="NEA-TEST-001" productTypeId="FINISHED_GOOD" primaryProductCategoryId="NEA_CAT_EQUIP" internalName="NEA API Test Item" productName="NEA API Test Item" description="Deterministic stock item for inventory/order/payment API testing" requireInventory="Y" taxable="N" chargeShipping="N" autoCreateKeywords="Y" isVirtual="N" isVariant="N"/>
+    <Product productId="NEA-METER-DEMO" productTypeId="FINISHED_GOOD" primaryProductCategoryId="NEA_CAT_EQUIP" internalName="NEA Smart Meter Demo Unit" productName="NEA Smart Meter Demo Unit" description="Demo stock unit for inventory flows" requireInventory="Y" taxable="N" chargeShipping="N" autoCreateKeywords="Y" isVirtual="N" isVariant="N"/>
+    <Product productId="NEA-SAFETY-SEAL" productTypeId="FINISHED_GOOD" primaryProductCategoryId="NEA_CAT_EQUIP" internalName="NEA Inspection Safety Seal" productName="NEA Inspection Safety Seal" description="Demo inspection seal stock item" requireInventory="Y" taxable="N" chargeShipping="N" autoCreateKeywords="Y" isVirtual="N" isVariant="N"/>
+
+    <!-- Product category membership -->
+    <ProductCategoryMember productCategoryId="NEA_CAT_LICENSE" productId="NEA-LIC-APPLICATION" fromDate="2026-01-01 00:00:00.000" sequenceNum="10"/>
+    <ProductCategoryMember productCategoryId="NEA_CAT_LICENSE" productId="NEA-LIC-RENEWAL" fromDate="2026-01-01 00:00:00.000" sequenceNum="20"/>
+    <ProductCategoryMember productCategoryId="NEA_CAT_PERMITS" productId="NEA-WIRING-PERMIT" fromDate="2026-01-01 00:00:00.000" sequenceNum="10"/>
+    <ProductCategoryMember productCategoryId="NEA_CAT_INSPECT" productId="NEA-INSTALL-INSPECT" fromDate="2026-01-01 00:00:00.000" sequenceNum="10"/>
+    <ProductCategoryMember productCategoryId="NEA_CAT_PERMITS" productId="NEA-SAFETY-CERT" fromDate="2026-01-01 00:00:00.000" sequenceNum="20"/>
+    <ProductCategoryMember productCategoryId="NEA_CAT_REGISTER" productId="NEA-CONTRACTOR-REG" fromDate="2026-01-01 00:00:00.000" sequenceNum="10"/>
+    <ProductCategoryMember productCategoryId="NEA_CAT_REGISTER" productId="NEA-ELECTRICIAN-REG" fromDate="2026-01-01 00:00:00.000" sequenceNum="20"/>
+    <ProductCategoryMember productCategoryId="NEA_CAT_EQUIP" productId="NEA-TEST-001" fromDate="2026-01-01 00:00:00.000" sequenceNum="10"/>
+    <ProductCategoryMember productCategoryId="NEA_CAT_EQUIP" productId="NEA-METER-DEMO" fromDate="2026-01-01 00:00:00.000" sequenceNum="20"/>
+    <ProductCategoryMember productCategoryId="NEA_CAT_EQUIP" productId="NEA-SAFETY-SEAL" fromDate="2026-01-01 00:00:00.000" sequenceNum="30"/>
+
+    <!-- GoodIdentification / barcodes -->
+    <GoodIdentification goodIdentificationTypeId="SKU" productId="NEA-TEST-001" idValue="NEA0001"/>
+    <GoodIdentification goodIdentificationTypeId="SKU" productId="NEA-METER-DEMO" idValue="NEA0002"/>
+    <GoodIdentification goodIdentificationTypeId="SKU" productId="NEA-SAFETY-SEAL" idValue="NEA0003"/>
+
+    <!-- PGK prices -->
+    <ProductPrice productId="NEA-LIC-APPLICATION" productPricePurposeId="PURCHASE" productPriceTypeId="DEFAULT_PRICE" currencyUomId="PGK" productStoreGroupId="_NA_" fromDate="2026-01-01 00:00:00.000" price="500.00"/>
+    <ProductPrice productId="NEA-LIC-RENEWAL" productPricePurposeId="PURCHASE" productPriceTypeId="DEFAULT_PRICE" currencyUomId="PGK" productStoreGroupId="_NA_" fromDate="2026-01-01 00:00:00.000" price="300.00"/>
+    <ProductPrice productId="NEA-WIRING-PERMIT" productPricePurposeId="PURCHASE" productPriceTypeId="DEFAULT_PRICE" currencyUomId="PGK" productStoreGroupId="_NA_" fromDate="2026-01-01 00:00:00.000" price="100.00"/>
+    <ProductPrice productId="NEA-INSTALL-INSPECT" productPricePurposeId="PURCHASE" productPriceTypeId="DEFAULT_PRICE" currencyUomId="PGK" productStoreGroupId="_NA_" fromDate="2026-01-01 00:00:00.000" price="150.00"/>
+    <ProductPrice productId="NEA-SAFETY-CERT" productPricePurposeId="PURCHASE" productPriceTypeId="DEFAULT_PRICE" currencyUomId="PGK" productStoreGroupId="_NA_" fromDate="2026-01-01 00:00:00.000" price="75.00"/>
+    <ProductPrice productId="NEA-CONTRACTOR-REG" productPricePurposeId="PURCHASE" productPriceTypeId="DEFAULT_PRICE" currencyUomId="PGK" productStoreGroupId="_NA_" fromDate="2026-01-01 00:00:00.000" price="250.00"/>
+    <ProductPrice productId="NEA-ELECTRICIAN-REG" productPricePurposeId="PURCHASE" productPriceTypeId="DEFAULT_PRICE" currencyUomId="PGK" productStoreGroupId="_NA_" fromDate="2026-01-01 00:00:00.000" price="100.00"/>
+    <ProductPrice productId="NEA-TEST-001" productPricePurposeId="PURCHASE" productPriceTypeId="DEFAULT_PRICE" currencyUomId="PGK" productStoreGroupId="_NA_" fromDate="2026-01-01 00:00:00.000" price="10.00"/>
+    <ProductPrice productId="NEA-METER-DEMO" productPricePurposeId="PURCHASE" productPriceTypeId="DEFAULT_PRICE" currencyUomId="PGK" productStoreGroupId="_NA_" fromDate="2026-01-01 00:00:00.000" price="350.00"/>
+    <ProductPrice productId="NEA-SAFETY-SEAL" productPricePurposeId="PURCHASE" productPriceTypeId="DEFAULT_PRICE" currencyUomId="PGK" productStoreGroupId="_NA_" fromDate="2026-01-01 00:00:00.000" price="10.00"/>
+
+    <!-- Opening stock. Service products intentionally have no InventoryItem. -->
+    <InventoryItem inventoryItemId="NEA_INV_TEST_001" inventoryItemTypeId="NON_SERIAL_INV_ITEM" productId="NEA-TEST-001" ownerPartyId="NEA" facilityId="NEA_HQ_WAREHOUSE" quantityOnHandTotal="10" availableToPromiseTotal="10" datetimeReceived="2026-01-01 00:00:00.000"/>
+    <InventoryItem inventoryItemId="NEA_INV_METER_001" inventoryItemTypeId="NON_SERIAL_INV_ITEM" productId="NEA-METER-DEMO" ownerPartyId="NEA" facilityId="NEA_HQ_WAREHOUSE" quantityOnHandTotal="25" availableToPromiseTotal="25" datetimeReceived="2026-01-01 00:00:00.000"/>
+    <InventoryItem inventoryItemId="NEA_INV_SEAL_001" inventoryItemTypeId="NON_SERIAL_INV_ITEM" productId="NEA-SAFETY-SEAL" ownerPartyId="NEA" facilityId="NEA_HQ_WAREHOUSE" quantityOnHandTotal="100" availableToPromiseTotal="100" datetimeReceived="2026-01-01 00:00:00.000"/>
+
+    <!-- 7. Starter NEA GL / accounting configuration -->
+    <GlJournal glJournalId="NEA_ERROR_JOURNAL" organizationPartyId="NEA" glJournalName="NEA Error Journal"/>
+    <PartyAcctgPreference partyId="NEA" fiscalYearStartMonth="1" fiscalYearStartDay="1" cogsMethodId="COGS_AVG_COST" baseCurrencyUomId="PGK" errorGlJournalId="NEA_ERROR_JOURNAL"/>
+
+    <GlAccount glAccountId="NEA1000" glAccountTypeId="CURRENT_ASSET" glAccountClassId="ASSET" accountCode="1000" accountName="Cash and Bank" description="NEA cash and bank"/>
+    <GlAccount glAccountId="NEA1100" glAccountTypeId="ACCOUNTS_RECEIVABLE" glAccountClassId="ASSET" accountCode="1100" accountName="Accounts Receivable" description="NEA customer receivables"/>
+    <GlAccount glAccountId="NEA1200" glAccountTypeId="INVENTORY_ACCOUNT" glAccountClassId="ASSET" accountCode="1200" accountName="Inventory Asset" description="NEA inventory asset"/>
+    <GlAccount glAccountId="NEA2000" glAccountTypeId="CURRENT_LIABILITY" glAccountClassId="LIABILITY" accountCode="2000" accountName="Current Liabilities"/>
+    <GlAccount glAccountId="NEA2100" glAccountTypeId="ACCOUNTS_PAYABLE" glAccountClassId="LIABILITY" accountCode="2100" accountName="Accounts Payable"/>
+    <GlAccount glAccountId="NEA2200" glAccountTypeId="TAX_ACCOUNT" glAccountClassId="LIABILITY" accountCode="2200" accountName="Taxes Payable"/>
+    <GlAccount glAccountId="NEA3000" glAccountTypeId="OWNERS_EQUITY" glAccountClassId="EQUITY" accountCode="3000" accountName="Accumulated Funds / Equity"/>
+    <GlAccount glAccountId="NEA4000" glAccountTypeId="SALES_ACCOUNT" glAccountClassId="REVENUE" accountCode="4000" accountName="Licence and Permit Revenue"/>
+    <GlAccount glAccountId="NEA4010" glAccountTypeId="SALES_ACCOUNT" glAccountClassId="REVENUE" accountCode="4010" accountName="Inspection Revenue"/>
+    <GlAccount glAccountId="NEA4020" glAccountTypeId="SALES_ACCOUNT" glAccountClassId="REVENUE" accountCode="4020" accountName="Registration Revenue"/>
+    <GlAccount glAccountId="NEA4030" glAccountTypeId="SALES_ACCOUNT" glAccountClassId="REVENUE" accountCode="4030" accountName="Equipment and Counter Sales Revenue"/>
+    <GlAccount glAccountId="NEA5000" glAccountTypeId="COGS_ACCOUNT" glAccountClassId="EXPENSE" accountCode="5000" accountName="Cost of Goods Sold"/>
+    <GlAccount glAccountId="NEA6000" glAccountTypeId="OPERATING_EXPENSE" glAccountClassId="EXPENSE" accountCode="6000" accountName="Salaries and Employee Costs"/>
+    <GlAccount glAccountId="NEA6100" glAccountTypeId="OPERATING_EXPENSE" glAccountClassId="EXPENSE" accountCode="6100" accountName="Utilities and Communications"/>
+    <GlAccount glAccountId="NEA6200" glAccountTypeId="OPERATING_EXPENSE" glAccountClassId="EXPENSE" accountCode="6200" accountName="Administration Expenses"/>
+
+    <GlAccountOrganization glAccountId="NEA1000" organizationPartyId="NEA" fromDate="2026-01-01 00:00:00.000"/>
+    <GlAccountOrganization glAccountId="NEA1100" organizationPartyId="NEA" fromDate="2026-01-01 00:00:00.000"/>
+    <GlAccountOrganization glAccountId="NEA1200" organizationPartyId="NEA" fromDate="2026-01-01 00:00:00.000"/>
+    <GlAccountOrganization glAccountId="NEA2000" organizationPartyId="NEA" fromDate="2026-01-01 00:00:00.000"/>
+    <GlAccountOrganization glAccountId="NEA2100" organizationPartyId="NEA" fromDate="2026-01-01 00:00:00.000"/>
+    <GlAccountOrganization glAccountId="NEA2200" organizationPartyId="NEA" fromDate="2026-01-01 00:00:00.000"/>
+    <GlAccountOrganization glAccountId="NEA3000" organizationPartyId="NEA" fromDate="2026-01-01 00:00:00.000"/>
+    <GlAccountOrganization glAccountId="NEA4000" organizationPartyId="NEA" fromDate="2026-01-01 00:00:00.000"/>
+    <GlAccountOrganization glAccountId="NEA4010" organizationPartyId="NEA" fromDate="2026-01-01 00:00:00.000"/>
+    <GlAccountOrganization glAccountId="NEA4020" organizationPartyId="NEA" fromDate="2026-01-01 00:00:00.000"/>
+    <GlAccountOrganization glAccountId="NEA4030" organizationPartyId="NEA" fromDate="2026-01-01 00:00:00.000"/>
+    <GlAccountOrganization glAccountId="NEA5000" organizationPartyId="NEA" fromDate="2026-01-01 00:00:00.000"/>
+    <GlAccountOrganization glAccountId="NEA6000" organizationPartyId="NEA" fromDate="2026-01-01 00:00:00.000"/>
+    <GlAccountOrganization glAccountId="NEA6100" organizationPartyId="NEA" fromDate="2026-01-01 00:00:00.000"/>
+    <GlAccountOrganization glAccountId="NEA6200" organizationPartyId="NEA" fromDate="2026-01-01 00:00:00.000"/>
+
+    <GlAccountTypeDefault glAccountTypeId="ACCOUNTS_RECEIVABLE" organizationPartyId="NEA" glAccountId="NEA1100"/>
+    <GlAccountTypeDefault glAccountTypeId="ACCOUNTS_PAYABLE" organizationPartyId="NEA" glAccountId="NEA2100"/>
+    <GlAccountTypeDefault glAccountTypeId="INVENTORY_ACCOUNT" organizationPartyId="NEA" glAccountId="NEA1200"/>
+    <GlAccountTypeDefault glAccountTypeId="COGS_ACCOUNT" organizationPartyId="NEA" glAccountId="NEA5000"/>
+    <GlAccountTypeDefault glAccountTypeId="SALES_ACCOUNT" organizationPartyId="NEA" glAccountId="NEA4000"/>
+    <GlAccountTypeDefault glAccountTypeId="OWNERS_EQUITY" organizationPartyId="NEA" glAccountId="NEA3000"/>
+    <GlAccountTypeDefault glAccountTypeId="OPERATING_EXPENSE" organizationPartyId="NEA" glAccountId="NEA6200"/>
+
+    <!-- Sales invoice and KumulPay/offline payment mappings used by wanerpapi demo flows. -->
+    <InvoiceItemTypeGlAccount invoiceItemTypeId="INV_FPROD_ITEM" organizationPartyId="NEA" glAccountId="NEA4030"/>
+    <InvoiceItemTypeGlAccount invoiceItemTypeId="INV_SPROD_ITEM" organizationPartyId="NEA" glAccountId="NEA4000"/>
+    <InvoiceItemTypeGlAccount invoiceItemTypeId="INV_SALES_TAX" organizationPartyId="NEA" glAccountId="NEA2200"/>
+    <InvoiceItemTypeGlAccount invoiceItemTypeId="INV_SHIPPING_CHARGES" organizationPartyId="NEA" glAccountId="NEA4030"/>
+    <PaymentGlAccountTypeMap paymentTypeId="CUSTOMER_PAYMENT" organizationPartyId="NEA" glAccountTypeId="ACCOUNTS_RECEIVABLE"/>
+    <PaymentMethodTypeGlAccount paymentMethodTypeId="EXT_OFFLINE" organizationPartyId="NEA" glAccountId="NEA1000"/>
+
+</entity-engine-xml>

@@ -36,7 +36,8 @@ under the License.
 
     <!-- web applications; will be mounted when using the embedded container -->
     <webapp name="rest-api"
-            title="REST API"
+	    title="REST API"
+	    app-bar-display="false"
             server="default-server"
             location="webapp/rest-api"
             mount-point="/rest"/>

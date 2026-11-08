@@ -109,7 +109,10 @@ public class HttpBasicAuthFilter implements ContainerRequestFilter {
 
     private void authenticate(String userName, String password) throws ForbiddenException {
         Map<String, Object> result = null;
-        LocalDispatcher dispatcher = (LocalDispatcher) servletContext.getAttribute("dispatcher");
+        LocalDispatcher dispatcher = (LocalDispatcher) httpRequest.getAttribute("dispatcher");
+        if (dispatcher == null) {
+            dispatcher = (LocalDispatcher) servletContext.getAttribute("dispatcher");
+        }
         try {
             result = dispatcher.runSync("userLogin",
                     UtilMisc.toMap("login.username", userName, "login.password", password, "locale", UtilHttp.getLocale(httpRequest)));

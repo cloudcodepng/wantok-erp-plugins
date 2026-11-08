@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="https://ofbiz.apache.org/dtds/services.xsd">
+    <description>Wantok Keycloak/OIDC service definitions.</description>
+
+    <service name="wanKeycloakAuditLogin" engine="java" auth="false"
+             location="com.cloudcode.wantok.keycloak.WanKeycloakServices" invoke="auditLogin">
+        <attribute name="tenantId" type="String" mode="IN" optional="true"/>
+        <attribute name="userLoginId" type="String" mode="IN" optional="true"/>
+        <attribute name="keycloakSubject" type="String" mode="IN" optional="true"/>
+        <attribute name="eventType" type="String" mode="IN" optional="false"/>
+        <attribute name="message" type="String" mode="IN" optional="true"/>
+    </service>
+</services>

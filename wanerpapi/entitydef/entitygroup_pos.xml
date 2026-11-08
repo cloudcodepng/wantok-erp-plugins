@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entitygroup xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="https://ofbiz.apache.org/dtds/entitygroup.xsd">
+  <entity-group group="org.apache.ofbiz" entity="WanPosUserStoreGrant"/>
+  <entity-group group="org.apache.ofbiz" entity="WanPosRefundAttemptResolution"/>
+  <entity-group group="org.apache.ofbiz" entity="WanPosManagerBadge"/>
+  <entity-group group="org.apache.ofbiz" entity="WanPosTerminal"/>
+  <entity-group group="org.apache.ofbiz" entity="WanPosTerminalDevice"/>
+  <entity-group group="org.apache.ofbiz" entity="WanPosShift"/>
+  <entity-group group="org.apache.ofbiz" entity="WanPosSaleRequest"/>
+  <entity-group group="org.apache.ofbiz" entity="WanPosEftposReconciliation"/>
+  <entity-group group="org.apache.ofbiz" entity="WanPosAudit"/>
+  <entity-group group="org.apache.ofbiz" entity="WanPosScaleProfile"/>
+  <entity-group group="org.apache.ofbiz" entity="WanPosScalePluMap"/>
+</entitygroup>
